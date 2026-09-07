@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Outage Money</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --text: #151515;
+    --muted: #727272;
+    --line: #ddddda;
+    --accent: #156b3a;
+    --danger: #9a2424;
+    --shadow: 0 14px 40px rgba(0,0,0,.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; }
+  .topbar {
+    position: fixed; inset: 0 0 auto 0; z-index: 5;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: max(14px, env(safe-area-inset-top)) 16px 0;
+    pointer-events: none;
+  }
+  .topbar button {
+    pointer-events: auto;
+    border: 1px solid var(--line); background: rgba(255,255,255,.92); color: var(--text);
+    border-radius: 999px; padding: 7px 11px; font-size: 13px; font-weight: 650;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  main {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 76px 22px 48px;
+  }
+  .ticker { width: min(92vw, 520px); text-align: center; }
+  .eyebrow { font-size: 13px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 17px; }
+  .total {
+    font-size: clamp(54px, 13vw, 88px);
+    line-height: .98;
+    font-weight: 780;
+    letter-spacing: -.055em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .total.negative { color: var(--danger); }
+  .status { margin-top: 28px; font-size: 12px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+  .status.active { color: var(--accent); }
+
+  dialog {
+    width: min(94vw, 520px);
+    max-height: min(88vh, 760px);
+    border: 0;
+    border-radius: 18px;
+    padding: 0;
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.38); backdrop-filter: blur(2px); }
+  .dialog-shell { padding: 18px; overflow: auto; max-height: min(88vh, 760px); }
+  .dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .dialog-head h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+  .icon-btn { border: 0; background: transparent; padding: 7px 9px; border-radius: 9px; color: var(--muted); font-size: 22px; line-height: 1; }
+  .icon-btn:hover { background: #f0f0ed; color: var(--text); }
+  .field { display: grid; gap: 6px; margin-bottom: 12px; }
+  .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
+  input, select {
+    width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text);
+    padding: 10px 11px; min-height: 42px;
+  }
+  input:focus, select:focus { outline: 2px solid rgba(21,107,58,.18); border-color: #7baa8e; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-list { border-top: 1px solid var(--line); margin-top: 14px; }
+  .item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .item-main { min-width: 0; }
+  .item-title { font-weight: 700; font-size: 15px; }
+  .item-sub { margin-top: 2px; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-actions { display: flex; gap: 5px; flex: none; }
+  .small-btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 650; }
+  .small-btn.danger { color: var(--danger); }
+  .primary { width: 100%; border: 0; background: var(--text); color: white; border-radius: 11px; padding: 11px 13px; font-weight: 750; min-height: 44px; }
+  .secondary { width: 100%; border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 11px; padding: 10px 13px; font-weight: 700; min-height: 42px; }
+  .form-card { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: #fafaf8; }
+  .form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 17px 0; text-align: center; border-bottom: 1px solid var(--line); }
+  .error { min-height: 18px; margin: 4px 0 8px; color: var(--danger); font-size: 12px; font-weight: 650; }
+  .summary-line { font-size: 13px; color: var(--muted); margin: -4px 0 10px; }
+  .summary-line strong { color: var(--text); }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 430px) {
+    .topbar { padding-left: 12px; padding-right: 12px; }
+    .topbar button { padding: 6px 9px; font-size: 12px; }
+    dialog { width: calc(100vw - 18px); border-radius: 16px; }
+    .dialog-shell { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="hoursBtn" type="button" aria-label="Adjust overtime hours">Hours</button>
+    <button id="spendBtn" type="button" aria-label="Add or edit expenditure">Spend</button>
+  </div>
+
+  <main>
+    <section class="ticker" aria-live="polite">
+      <div class="eyebrow">Outage Money</div>
+      <div id="total" class="total">£0.00</div>
+      <div id="status" class="status">Not earning</div>
+    </section>
+  </main>
+
+  <dialog id="hoursDialog">
+    <div class="dialog-shell">
+      <div class="dialog-head">
+        <h2>Overtime</h2>
+        <button class="icon-btn" type="button" data-close="hoursDialog" aria-label="Close">×</button>
+      </div>
+      <div class="field">
+        <label for="hoursDate">Date</label>
+        <input id="hoursDate" type="date">
+      </div>
+      <div id="hoursList" class="row-list"></div>
+      <button id="addHoursBtn" class="secondary" type="button" style="margin-top:14px">+ Add overtime</button>
+
+      <form id="hoursForm" class="form-card" hidden>
+        <input id="periodId" type="hidden">
+        <div class="two">
+          <div class="field">
+            <label for="periodStart">Start</label>
+            <input id="periodStart" type="time" required>
+          </div>
+          <div class="field">
+            <label for="periodEnd">Finish</label>
+            <input id="periodEnd" type="time" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="periodRate">Rate</label>
+          <select id="periodRate">
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </div>
+        <div id="hoursError" class="error"></div>
+        <div class="form-actions">
+          <button id="cancelHoursEdit" class="secondary" type="button">Cancel</button>
+          <button class="primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="spendDialog">
+    <div class="dialog-shell">
+      <div class="dialog-head">
+        <h2>Spend</h2>
+        <button class="icon-btn" type="button" data-close="spendDialog" aria-label="Close">×</button>
+      </div>
+      <form id="spendForm">
+        <input id="expenseId" type="hidden">
+        <div class="field">
+          <label for="expenseDescription">What is it for?</label>
+          <input id="expenseDescription" type="text" maxlength="80" placeholder="Holiday" required>
+        </div>
+        <div class="two">
+          <div class="field">
+            <label for="expenseAmount">Amount</label>
+            <input id="expenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required>
+          </div>
+          <div class="field">
+            <label for="expenseDate">Date</label>
+            <input id="expenseDate" type="date" required>
+          </div>
+        </div>
+        <div id="spendError" class="error"></div>
+        <button class="primary" type="submit">Save expenditure</button>
+        <button id="cancelSpendEdit" class="secondary" type="button" hidden style="margin-top:8px">Cancel edit</button>
+      </form>
+      <div id="spendSummary" class="summary-line" style="margin-top:16px"></div>
+      <div id="spendList" class="row-list"></div>
+    </div>
+  </dialog>
+
+<script>
+/* OUTAGE_MONEY_CORE_START */
+(() => {
+  'use strict';
+
+  const BASIC_HOURLY_RATE = 37.21;
+  const NET_FACTOR = 0.58;
+
+  const RAW_DEFAULT_PERIODS = [
+    ['2026-09-07','15:30','19:00',1.5],
+    ['2026-09-08','15:30','16:30',1.5],
+    ['2026-09-09','15:30','19:00',1.5],
+    ['2026-09-10','15:30','16:30',1.5],
+    ['2026-09-11','15:30','19:00',1.5],
+    ['2026-09-12','07:00','19:00',2],
+    ['2026-09-13','07:00','16:00',2],
+    ['2026-09-14','15:30','17:30',1.5],
+    ['2026-09-15','15:30','16:30',1.5],
+    ['2026-09-16','15:30','19:00',1.5],
+    ['2026-09-17','15:30','16:30',1.5],
+    ['2026-09-18','15:30','19:00',1.5],
+    ['2026-09-21','15:30','19:00',1.5],
+    ['2026-09-22','15:30','16:30',1.5],
+    ['2026-09-23','15:30','16:30',1.5],
+    ['2026-09-24','15:30','16:30',1.5],
+    ['2026-09-25','15:30','19:00',1.5],
+    ['2026-09-26','07:00','19:00',2],
+    ['2026-09-27','07:00','19:00',2],
+    ['2026-09-28','15:30','19:00',1.5],
+    ['2026-09-29','15:30','16:30',1.5],
+    ['2026-09-30','15:30','17:30',1.5],
+    ['2026-10-01','15:30','16:30',1.5],
+    ['2026-10-02','15:30','19:00',1.5],
+    ['2026-10-05','15:30','19:00',1.5],
+    ['2026-10-06','15:30','16:30',1.5],
+    ['2026-10-07','15:30','19:00',1.5],
+    ['2026-10-08','15:30','16:30',1.5],
+    ['2026-10-09','15:30','19:00',1.5],
+    ['2026-10-10','07:00','19:00',2],
+    ['2026-10-11','07:00','19:00',2],
+    ['2026-10-12','15:30','19:00',1.5],
+    ['2026-10-13','15:30','16:30',1.5],
+    ['2026-10-14','15:30','19:00',1.5],
+    ['2026-10-15','15:30','16:30',1.5],
+    ['2026-10-16','15:30','19:00',1.5],
+    ['2026-10-19','15:30','19:00',1.5],
+    ['2026-10-20','15:30','16:30',1.5],
+    ['2026-10-21','15:30','19:00',1.5],
+    ['2026-10-22','15:30','16:30',1.5],
+    ['2026-10-23','15:30','19:00',1.5],
+    ['2026-10-24','07:00','19:00',2],
+    ['2026-10-25','07:00','17:00',2],
+    ['2026-10-26','15:30','19:00',1.5],
+    ['2026-10-27','15:30','16:30',1.5],
+    ['2026-10-28','15:30','19:00',1.5],
+    ['2026-10-29','15:30','16:30',1.5],
+    ['2026-10-30','15:30','19:00',1.5],
+    ['2026-11-02','15:30','19:00',1.5],
+    ['2026-11-03','15:30','16:30',1.5],
+    ['2026-11-04','15:30','19:00',1.5],
+    ['2026-11-05','15:30','16:30',1.5],
+    ['2026-11-06','15:30','19:00',1.5],
+    ['2026-11-07','07:00','19:00',2],
+    ['2026-11-08','07:00','19:00',2]
+  ];
+
+  const DEFAULT_PERIODS = RAW_DEFAULT_PERIODS.map((p, i) => ({
+    id: `default-${i + 1}`,
+    date: p[0], start: p[1], end: p[2], multiplier: p[3]
+  }));
+
+  function hourlyNetRate(multiplier) {
+    return Number((BASIC_HOURLY_RATE * Number(multiplier) * NET_FACTOR).toFixed(10));
+  }
+
+  function defaultMultiplierForDate(dateStr) {
+    const day = new Date(`${dateStr}T12:00:00Z`).getUTCDay();
+    return (day === 0 || day === 6) ? 2 : 1.5;
+  }
+
+  function localDateTimeMs(dateStr, timeStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const [hh, mm] = timeStr.split(':').map(Number);
+    return new Date(y, m - 1, d, hh, mm, 0, 0).getTime();
+  }
+
+
+  function ukDateTimeMs(dateStr, timeStr) {
+    const [y,m,d] = dateStr.split('-').map(Number);
+    const [hh,mm] = timeStr.split(':').map(Number);
+    const targetUtc = Date.UTC(y, m - 1, d, hh, mm, 0);
+    let guess = targetUtc;
+    const fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    });
+    for (let i = 0; i < 3; i++) {
+      const parts = fmt.formatToParts(new Date(guess)).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+      const represented = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+      const offset = represented - guess;
+      const next = targetUtc - offset;
+      if (next === guess) break;
+      guess = next;
+    }
+    return guess;
+  }
+
+  function earnedForPeriod(period, nowMs, resolver = localDateTimeMs) {
+    const startMs = resolver(period.date, period.start);
+    const endMs = resolver(period.date, period.end);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs || nowMs <= startMs) return 0;
+    const elapsedMs = Math.min(nowMs, endMs) - startMs;
+    return (elapsedMs / 3600000) * hourlyNetRate(period.multiplier);
+  }
+
+  function calculateSnapshot(nowMs, state, resolver = localDateTimeMs) {
+    const periods = Array.isArray(state?.periods) ? state.periods : [];
+    const expenses = Array.isArray(state?.expenses) ? state.expenses : [];
+    let earned = 0;
+    let activeMultiplier = null;
+
+    for (const period of periods) {
+      earned += earnedForPeriod(period, nowMs, resolver);
+      const startMs = resolver(period.date, period.start);
+      const endMs = resolver(period.date, period.end);
+      if (nowMs >= startMs && nowMs < endMs) activeMultiplier = Number(period.multiplier);
+    }
+
+    const spent = expenses.reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
+    const hourRate = activeMultiplier ? hourlyNetRate(activeMultiplier) : 0;
+
+    return {
+      earned,
+      spent,
+      totalNet: earned - spent,
+      active: activeMultiplier !== null,
+      activeMultiplier,
+      hourRate,
+      minuteRate: hourRate / 60
+    };
+  }
+
+  function validatePeriod(candidate, periods) {
+    if (!candidate?.date || !/^\d{2}:\d{2}$/.test(candidate.start || '') || !/^\d{2}:\d{2}$/.test(candidate.end || '')) {
+      return { ok: false, message: 'Enter a date, start time and finish time.' };
+    }
+    if (!([1.5, 2].includes(Number(candidate.multiplier)))) {
+      return { ok: false, message: 'Choose a valid overtime rate.' };
+    }
+    if (candidate.end <= candidate.start) {
+      return { ok: false, message: 'Finish time must be after start time.' };
+    }
+    const others = (periods || []).filter(p => p.date === candidate.date && p.id !== candidate.id);
+    const overlaps = others.some(p => candidate.start < p.end && candidate.end > p.start);
+    if (overlaps) return { ok: false, message: 'This overlaps another overtime period on the same date.' };
+    return { ok: true, message: '' };
+  }
+
+  globalThis.OutageMoneyCore = {
+    BASIC_HOURLY_RATE,
+    NET_FACTOR,
+    DEFAULT_PERIODS,
+    hourlyNetRate,
+    defaultMultiplierForDate,
+    localDateTimeMs,
+    ukDateTimeMs,
+    earnedForPeriod,
+    calculateSnapshot,
+    validatePeriod
+  };
+})();
+/* OUTAGE_MONEY_CORE_END */
+</script>
+
+<script>
+(() => {
+  'use strict';
+  const core = globalThis.OutageMoneyCore;
+  const STORAGE_KEY = 'outageMoneyTrackerV1';
+  const money = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+  const $ = id => document.getElementById(id);
+  const cloneDefaults = () => core.DEFAULT_PERIODS.map(p => ({ ...p }));
+  const makeId = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { version: 1, periods: cloneDefaults(), expenses: [] };
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.periods) || !Array.isArray(parsed.expenses)) throw new Error('Invalid state');
+      return { version: 1, periods: parsed.periods, expenses: parsed.expenses };
+    } catch {
+      return { version: 1, periods: cloneDefaults(), expenses: [] };
+    }
+  }
+
+  let state = loadState();
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function ukToday(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(now).reduce((acc, p) => (acc[p.type] = p.value, acc), {});
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+
+  function renderTicker() {
+    const snap = core.calculateSnapshot(Date.now(), state, core.ukDateTimeMs);
+    $('total').textContent = money.format(snap.totalNet);
+    $('total').classList.toggle('negative', snap.totalNet < 0);
+    $('status').textContent = snap.active ? 'Earning now' : 'Not earning';
+    $('status').classList.toggle('active', snap.active);
+  }
+
+  function openDialog(dialog) {
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  function closeDialog(dialog) {
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+  }
+
+  function displayDate(dateStr) {
+    const [y,m,d] = dateStr.split('-').map(Number);
+    return dateLabel.format(new Date(y, m - 1, d, 12, 0));
+  }
+
+  function renderHoursList() {
+    const date = $('hoursDate').value;
+    const list = $('hoursList');
+    const periods = state.periods.filter(p => p.date === date).sort((a,b) => a.start.localeCompare(b.start));
+    list.innerHTML = '';
+    if (!periods.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No overtime on this date.';
+      list.appendChild(empty);
+      return;
+    }
+    for (const p of periods) {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <div class="item-main">
+          <div class="item-title">${p.start}–${p.end}</div>
+          <div class="item-sub">${Number(p.multiplier).toFixed(1).replace('.0','')}×</div>
+        </div>
+        <div class="item-actions">
+          <button class="small-btn" type="button" data-edit-period="${p.id}">Edit</button>
+          <button class="small-btn danger" type="button" data-delete-period="${p.id}">Delete</button>
+        </div>`;
+      list.appendChild(row);
+    }
+  }
+
+  function resetHoursForm() {
+    $('periodId').value = '';
+    $('periodStart').value = '';
+    $('periodEnd').value = '';
+    $('periodRate').value = String(core.defaultMultiplierForDate($('hoursDate').value || ukToday()));
+    $('hoursError').textContent = '';
+    $('hoursForm').hidden = true;
+  }
+
+  function beginAddHours() {
+    $('periodId').value = '';
+    $('periodStart').value = '';
+    $('periodEnd').value = '';
+    $('periodRate').value = String(core.defaultMultiplierForDate($('hoursDate').value));
+    $('hoursError').textContent = '';
+    $('hoursForm').hidden = false;
+    $('periodStart').focus();
+  }
+
+  function editPeriod(id) {
+    const p = state.periods.find(x => x.id === id);
+    if (!p) return;
+    $('hoursDate').value = p.date;
+    $('periodId').value = p.id;
+    $('periodStart').value = p.start;
+    $('periodEnd').value = p.end;
+    $('periodRate').value = String(p.multiplier);
+    $('hoursError').textContent = '';
+    $('hoursForm').hidden = false;
+    $('periodStart').focus();
+  }
+
+  function deletePeriod(id) {
+    state.periods = state.periods.filter(p => p.id !== id);
+    saveState();
+    renderHoursList();
+    resetHoursForm();
+    renderTicker();
+  }
+
+  function savePeriod(event) {
+    event.preventDefault();
+    const existingId = $('periodId').value;
+    const candidate = {
+      id: existingId || makeId('period'),
+      date: $('hoursDate').value,
+      start: $('periodStart').value,
+      end: $('periodEnd').value,
+      multiplier: Number($('periodRate').value)
+    };
+    const result = core.validatePeriod(candidate, state.periods);
+    if (!result.ok) {
+      $('hoursError').textContent = result.message;
+      return;
+    }
+    const index = state.periods.findIndex(p => p.id === candidate.id);
+    if (index >= 0) state.periods[index] = candidate;
+    else state.periods.push(candidate);
+    saveState();
+    resetHoursForm();
+    renderHoursList();
+    renderTicker();
+  }
+
+  function renderSpendList() {
+    const list = $('spendList');
+    const expenses = [...state.expenses].sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+    const total = expenses.reduce((s,e) => s + (Number(e.amount) || 0), 0);
+    $('spendSummary').innerHTML = expenses.length ? `Total spent: <strong>${money.format(total)}</strong>` : '';
+    list.innerHTML = '';
+    if (!expenses.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No expenditure added.';
+      list.appendChild(empty);
+      return;
+    }
+    for (const e of expenses) {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <div class="item-main">
+          <div class="item-title">${escapeHtml(e.description)} · ${money.format(Number(e.amount))}</div>
+          <div class="item-sub">${displayDate(e.date)}</div>
+        </div>
+        <div class="item-actions">
+          <button class="small-btn" type="button" data-edit-expense="${e.id}">Edit</button>
+          <button class="small-btn danger" type="button" data-delete-expense="${e.id}">Delete</button>
+        </div>`;
+      list.appendChild(row);
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+
+  function resetSpendForm() {
+    $('expenseId').value = '';
+    $('expenseDescription').value = '';
+    $('expenseAmount').value = '';
+    $('expenseDate').value = ukToday();
+    $('spendError').textContent = '';
+    $('cancelSpendEdit').hidden = true;
+  }
+
+  function editExpense(id) {
+    const e = state.expenses.find(x => x.id === id);
+    if (!e) return;
+    $('expenseId').value = e.id;
+    $('expenseDescription').value = e.description;
+    $('expenseAmount').value = Number(e.amount).toFixed(2);
+    $('expenseDate').value = e.date;
+    $('spendError').textContent = '';
+    $('cancelSpendEdit').hidden = false;
+    $('expenseDescription').focus();
+  }
+
+  function deleteExpense(id) {
+    state.expenses = state.expenses.filter(e => e.id !== id);
+    saveState();
+    renderSpendList();
+    resetSpendForm();
+    renderTicker();
+  }
+
+  function saveExpense(event) {
+    event.preventDefault();
+    const id = $('expenseId').value || makeId('expense');
+    const description = $('expenseDescription').value.trim();
+    const amount = Number($('expenseAmount').value);
+    const date = $('expenseDate').value;
+    if (!description || !date || !Number.isFinite(amount) || amount <= 0) {
+      $('spendError').textContent = 'Enter a description, amount and date.';
+      return;
+    }
+    const expense = { id, description, amount, date };
+    const index = state.expenses.findIndex(e => e.id === id);
+    if (index >= 0) state.expenses[index] = expense;
+    else state.expenses.push(expense);
+    saveState();
+    resetSpendForm();
+    renderSpendList();
+    renderTicker();
+  }
+
+  $('hoursBtn').addEventListener('click', () => {
+    $('hoursDate').value = ukToday();
+    resetHoursForm();
+    renderHoursList();
+    openDialog($('hoursDialog'));
+  });
+
+  $('spendBtn').addEventListener('click', () => {
+    resetSpendForm();
+    renderSpendList();
+    openDialog($('spendDialog'));
+  });
+
+  document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => closeDialog($(btn.dataset.close))));
+  [$('hoursDialog'), $('spendDialog')].forEach(dialog => dialog.addEventListener('click', event => {
+    if (event.target === dialog) closeDialog(dialog);
+  }));
+
+  $('hoursDate').addEventListener('change', () => { resetHoursForm(); renderHoursList(); });
+  $('addHoursBtn').addEventListener('click', beginAddHours);
+  $('cancelHoursEdit').addEventListener('click', resetHoursForm);
+  $('hoursForm').addEventListener('submit', savePeriod);
+  $('hoursList').addEventListener('click', event => {
+    const edit = event.target.closest('[data-edit-period]');
+    const del = event.target.closest('[data-delete-period]');
+    if (edit) editPeriod(edit.dataset.editPeriod);
+    if (del) deletePeriod(del.dataset.deletePeriod);
+  });
+
+  $('spendForm').addEventListener('submit', saveExpense);
+  $('cancelSpendEdit').addEventListener('click', resetSpendForm);
+  $('spendList').addEventListener('click', event => {
+    const edit = event.target.closest('[data-edit-expense]');
+    const del = event.target.closest('[data-delete-expense]');
+    if (edit) editExpense(edit.dataset.editExpense);
+    if (del) deleteExpense(del.dataset.deleteExpense);
+  });
+
+  renderTicker();
+  setInterval(renderTicker, 1000);
+})();
+</script>
+</body>
+</html>
