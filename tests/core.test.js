@@ -122,3 +122,13 @@ test('Europe/London conversion handles BST and GMT independent of device timezon
   assert.equal(new Date(ukDateTimeMs('2026-09-26','12:00')).toISOString(),'2026-09-26T11:00:00.000Z');
   assert.equal(new Date(ukDateTimeMs('2026-11-08','12:00')).toISOString(),'2026-11-08T12:00:00.000Z');
 });
+
+
+test('£5K Gremlin unlocks immediately while the threshold is crossed in an active shift',()=>{
+  const periods=[];
+  for(let i=1;i<=9;i++) periods.push({id:`d${i}`,date:`2026-01-${String(i).padStart(2,'0')}`,start:'07:00',end:'19:00',multiplier:2});
+  periods.push({id:'active',date:'2026-01-10',start:'07:00',end:'19:00',multiplier:2});
+  const now=ukDateTimeMs('2026-01-10','18:59');
+  const achievement=getAchievements(now,{periods,expenses:[]}).find(a=>a.id==='5k-gremlin');
+  assert.equal(achievement.unlocked,true);
+});

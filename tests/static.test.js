@@ -56,3 +56,11 @@ test('offline read-only mode disables mutation controls without blocking navigat
   assert.match(css,/\.read-only\s+\.quick-grid/);
   assert.doesNotMatch(css,/\.read-only\s+\.topbar/);
 });
+
+
+test('calendar day detail exposes a direct edit-hours action',async()=>{
+  const ui=await read('js/ui.js');
+  const app=await read('js/app.js');
+  assert.match(ui,/data-calendar-edit/);
+  assert.match(app,/calendarEdit/);
+});
