@@ -72,7 +72,7 @@ In `tests/core.test.mjs`, add tests asserting:
 - Corrected planned net total is £8,103.9659 before spending.
 - 25 Oct 2026 London time resolves consistently across the BST/GMT boundary.
 - `validatePeriod` rejects a finish-before-start period and a same-date overlap.
-- `adjustFinish(period, 30)` changes only the finish time and refuses to produce a finish at/before start.
+- `adjustFinish(period, 30)` changes only the finish time; a delta that would make finish <= start throws `RangeError` and leaves the original period unchanged.
 
 - [ ] **Step 2: Run tests and verify RED**
 
@@ -378,12 +378,14 @@ git commit -m "feat: add outage forecast and calendar planning"
 Assert:
 - spending does not affect milestone achievement;
 - £5,000 unlocks `5k-gremlin`;
+- completing 10 overtime periods unlocks `professional-clock-watcher`;
 - first completed Saturday unlocks `sold-my-saturday`;
 - Saturday+Sunday in one weekend unlocks `weekend-warrior`;
 - 50 completed 2× hours unlocks `double-time-demon`;
 - 100/150 completed OT hours unlock the corresponding badges;
 - the final completed scheduled period unlocks `outage-survivor`;
 - levels match the exact £0–£8k thresholds from the spec;
+- completion of the final scheduled overtime period returns the final rank `Outage Warlord`;
 - the countdown end changes if a later period is added/removed;
 - empty schedule produces a neutral countdown rather than an error.
 
@@ -447,7 +449,7 @@ Expected: FAIL for missing effects/boss exports.
 
 - [ ] **Step 3: Implement effects and boss model**
 
-Effects are DOM/CSS overlays that auto-dismiss and never mutate payroll/shared data. Respect `prefers-reduced-motion` by replacing full motion with a short static celebration.
+Effects are DOM/CSS overlays that auto-dismiss and never mutate payroll/shared data. The shift-complete overlay must render the exact headline `ANOTHER ONE BITES THE DUST`. Respect `prefers-reduced-motion` by replacing full motion with a short static celebration.
 
 - [ ] **Step 4: Wire milestone/achievement/boss/shift-complete triggers**
 
