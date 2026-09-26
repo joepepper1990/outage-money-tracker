@@ -86,3 +86,12 @@ test('polling emits only when updatedAt changes',async()=>{
   stop();
   assert.deepEqual(seen,['a','b']);
 });
+
+
+test('legacy migration does not rewrite a user-custom 19:00 Friday period',()=>{
+  const state={periods:[
+    {id:'custom-shift',date:'2026-09-18',start:'15:30',end:'19:00',multiplier:1.5}
+  ],expenses:[]};
+  const n=normalizeLegacyState(state);
+  assert.equal(n.periods[0].end,'19:00');
+});
