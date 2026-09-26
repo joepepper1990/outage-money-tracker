@@ -38,6 +38,11 @@ export const DEFAULT_PERIODS = RAW_DEFAULT_PERIODS.map((p,i)=>({
 
 export const hourlyNetRate = multiplier => Number((BASIC_HOURLY_RATE * Number(multiplier) * NET_FACTOR).toFixed(10));
 
+export function defaultMultiplierForDate(dateStr){
+  const day=new Date(`${dateStr}T12:00:00Z`).getUTCDay();
+  return day===0||day===6?2:1.5;
+}
+
 export function ukDateTimeMs(dateStr,timeStr){
   const [y,m,d]=dateStr.split('-').map(Number);
   const [hh,mm]=timeStr.split(':').map(Number);

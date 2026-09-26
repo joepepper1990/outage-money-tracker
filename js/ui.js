@@ -56,7 +56,7 @@ export function renderCalendar({year,month,state,nowMs,core}){
 }
 export function renderCalendarDay(date,state,core){
   const ps=(state.periods||[]).filter(p=>p.date===date);
-  if(!ps.length){$('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>No overtime planned.</div>`;return;}
+  if(!ps.length){$('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>No overtime planned.</div><button class="secondary" type="button" data-calendar-edit="${esc(date)}">Add overtime</button>`;return;}
   const net=ps.reduce((s,p)=>s+core.periodDurationHours(p)*core.hourlyNetRate(p.multiplier),0);
   $('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>${ps.map(p=>`${esc(p.start)}–${esc(p.end)} (${p.multiplier}×)`).join('<br>')}</div><div class="row-value" style="margin-top:7px">${formatMoney(net)}</div><button class="secondary" type="button" data-calendar-edit="${esc(date)}">Edit this day's hours</button>`;
 }
@@ -86,7 +86,7 @@ export function bindUI(actions){
   $('spendForm').addEventListener('submit',e=>{e.preventDefault();actions.saveExpense({id:$('expenseId').value||undefined,description:$('expenseDescription').value,amount:Number($('expenseAmount').value),date:$('expenseDate').value})});
   $('cancelHoursEdit').addEventListener('click',()=>actions.cancelPeriodEdit()); $('cancelSpendEdit').addEventListener('click',()=>actions.cancelExpenseEdit());
 }
-export function setPeriodForm(p){$('periodId').value=p?.id||'';$('periodStart').value=p?.start||'15:30';$('periodEnd').value=p?.end||'16:30';$('periodMultiplier').value=String(p?.multiplier||1.5);$('cancelHoursEdit').hidden=!p}
+export function setPeriodForm(p){const editing=!!p?.id;$('periodId').value=p?.id||'';$('periodStart').value=p?.start||'15:30';$('periodEnd').value=p?.end||'16:30';$('periodMultiplier').value=String(p?.multiplier||1.5);$('cancelHoursEdit').hidden=!editing}
 export function setExpenseForm(e,date){$('expenseId').value=e?.id||'';$('expenseDescription').value=e?.description||'';$('expenseAmount').value=e?.amount||'';$('expenseDate').value=e?.date||date;$('cancelSpendEdit').hidden=!e}
 export function setInlineError(kind,message=''){const el=$(kind==='hours'?'hoursError':'spendError');el.hidden=!message;el.textContent=message}
 export function showDialog(id){const d=$(id);if(!d.open)d.showModal()}

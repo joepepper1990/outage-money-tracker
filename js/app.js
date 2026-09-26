@@ -43,7 +43,7 @@ async function mutate(fn){
   ui.setSyncStatus('saving');ui.showError('');
   try{const out=await fn();await refresh();return out}catch(e){ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'synced');ui.showError(e.message||'Save failed. Your edit has not been discarded.');throw e}
 }
-function resetPeriodForm(){ui.setPeriodForm(null);ui.setInlineError('hours','')}
+function resetPeriodForm(){const date=document.getElementById('hoursDate').value||ui.ukToday();ui.setPeriodForm({start:'15:30',end:'16:30',multiplier:core.defaultMultiplierForDate(date)});ui.setInlineError('hours','')}
 function resetExpenseForm(){ui.setExpenseForm(null,ui.ukToday());ui.setInlineError('spend','')}
 
 ui.bindUI({
