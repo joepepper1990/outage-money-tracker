@@ -3,7 +3,7 @@ import { DEFAULT_PERIODS } from './core.js';
 export const V1_KEY='outageMoneyTrackerV1';
 export const CACHE_KEY='outageMoneyTrackerV2Cache';
 export const ACCESS_KEY='outageMoneyTrackerV2Access';
-const shortFridays=new Set(['2026-09-18','2026-10-02','2026-10-16','2026-10-30']);
+const legacyShortFridayIds=new Map([['2026-09-18','default-12'],['2026-10-02','default-24'],['2026-10-16','default-36'],['2026-10-30','default-48']]);
 const uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getStorage = storage => storage ?? globalThis.localStorage;
@@ -47,7 +47,7 @@ export function normalizeLegacyState(state){
   if(!state||!Array.isArray(state.periods)||!Array.isArray(state.expenses)) return null;
   const periods=state.periods.map(p=>{
     const out={...p,multiplier:Number(p.multiplier)};
-    if(shortFridays.has(out.date)&&out.start==='15:30'&&out.end==='19:00'&&Number(out.multiplier)===1.5) out.end='16:30';
+    if(legacyShortFridayIds.get(out.date)===out.id&&out.start==='15:30'&&out.end==='19:00'&&Number(out.multiplier)===1.5) out.end='16:30';
     return out;
   });
   return {periods,expenses:state.expenses.map(e=>({...e,amount:Number(e.amount)||0}))};

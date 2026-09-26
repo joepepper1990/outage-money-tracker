@@ -36,7 +36,7 @@ test('malformed v1 localStorage returns null',()=>{
 
 test('legacy long versions of known short Fridays are corrected without altering custom Friday',()=>{
   const state={periods:[
-    {id:'a',date:'2026-09-18',start:'15:30',end:'19:00',multiplier:1.5},
+    {id:'default-12',date:'2026-09-18',start:'15:30',end:'19:00',multiplier:1.5},
     {id:'b',date:'2026-10-02',start:'15:30',end:'18:00',multiplier:1.5}
   ],expenses:[]};
   const n=normalizeLegacyState(state);
