@@ -103,5 +103,23 @@ test('unconnected home-screen install exposes one-time shared tracker connection
 
 test('service worker cache version is bumped for migration hotfix',async()=>{
   const sw=await read('sw.js');
-  assert.match(sw,/outage-money-v2-20260926-2/);
+  assert.match(sw,/outage-money-v2-20260926-3/);
+});
+
+test('Fun tab and its panel are removed',async()=>{
+  const html=await read('index.html');
+  const app=await read('js/app.js');
+  const ui=await read('js/ui.js');
+  assert.doesNotMatch(html,/>Fun</);
+  assert.doesNotMatch(html,/id="funPanel"/);
+  assert.doesNotMatch(app,/renderFun/);
+  assert.doesNotMatch(ui,/export function renderFun/);
+});
+
+test('iPhone forms stack paired native controls and use minmax grids',async()=>{
+  const css=await read('styles.css');
+  assert.match(css,/\.form-grid\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media\(max-width:430px\)[^{]*\{[\s\S]*?\.form-grid\{grid-template-columns:1fr\}/);
+  assert.match(css,/input\[type="date"\],input\[type="time"\],input\[type="number"\][^{]*\{[^}]*min-inline-size:0/);
+  assert.match(css,/\.tabs\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
