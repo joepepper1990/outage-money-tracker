@@ -25,7 +25,7 @@ export function parseShareLink(value=''){
 export function storeShareLink(value,storage){
   const creds=parseShareLink(value);
   if(!creds)return null;
-  storeShareLink(`#join=${creds.trackerId}.${creds.accessKey}`,storage);
+  getStorage(storage)?.setItem(ACCESS_KEY,JSON.stringify(creds));
   return creds;
 }
 
