@@ -6,7 +6,7 @@ import * as fx from './effects.js';
 const CONFIG={projectUrl:'https://duskpiqfimuxjpnqcolx.supabase.co',publishableKey:'sb_publishable_hESTJUWoOG6S83y3MbfJhg_aka5SR-i'};
 let state=loadLocalCache()||readV1State()||defaultState();
 let creds=consumeShareFragment();
-let client=null,online=false,startedAt=Date.now(),lastTick=startedAt,lastEarned=core.calculateSnapshot(startedAt,state).earned;
+let client=null,online=false,saving=false,startedAt=Date.now(),lastTick=startedAt,lastEarned=core.calculateSnapshot(startedAt,state).earned;
 let calendarCursor=(()=>{const [y,m]=ui.ukToday().split('-').map(Number);return{year:y,month:m-1}})();
 let futureDate=core.DEFAULT_PERIODS.at(-1)?.date||ui.ukToday();
 let stopPolling=null;
@@ -39,9 +39,17 @@ async function refresh(){
   try{const remote=await client.getState();state={periods:remote.periods,expenses:remote.expenses,updatedAt:remote.updatedAt};online=true;saveLocalCache(state);ui.setSyncStatus('synced');ui.showError('');renderAll()}catch(e){online=false;ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'offline');ui.showError(e.code==='invalid-link'?'This device no longer has a valid share link.':'Shared data is unavailable. Cached data is read only until it reconnects.');renderAll()}
 }
 async function mutate(fn){
-  if(!client||!online){ui.showError('You are offline. Reconnect before changing shared data.');return null}
-  ui.setSyncStatus('saving');ui.showError('');
-  try{const out=await fn();await refresh();return out}catch(e){ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'synced');ui.showError(e.message||'Save failed. Your edit has not been discarded.');throw e}
+  if(!client||!online){const e=new Error('You are offline. Reconnect before changing shared data.');e.code='offline';ui.showError(e.message);throw e}
+  if(saving){const e=new Error('A save is already in progress.');e.code='busy';throw e}
+  saving=true;ui.setSyncStatus('saving');ui.showError('');
+  try{const out=await fn();await refresh();return out}
+  catch(e){
+    if(e.code==='invalid-link'){online=false;ui.setSyncStatus('invalid-link')}
+    else if(e.code==='offline'){online=false;ui.setSyncStatus('offline')}
+    else ui.setSyncStatus('synced');
+    ui.showError(e.message||'Save failed. Your edit has not been discarded.');
+    throw e;
+  }finally{saving=false}
 }
 function resetPeriodForm(){const date=document.getElementById('hoursDate').value||ui.ukToday();ui.setPeriodForm({start:'15:30',end:'16:30',multiplier:core.defaultMultiplierForDate(date)});ui.setInlineError('hours','')}
 function resetExpenseForm(){ui.setExpenseForm(null,ui.ukToday());ui.setInlineError('spend','')}
