@@ -60,14 +60,6 @@ export function renderCalendarDay(date,state,core){
   const net=ps.reduce((s,p)=>s+core.periodDurationHours(p)*core.hourlyNetRate(p.multiplier),0);
   $('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>${ps.map(p=>`${esc(p.start)}–${esc(p.end)} (${p.multiplier}×)`).join('<br>')}</div><div class="row-value" style="margin-top:7px">${formatMoney(net)}</div><button class="secondary" type="button" data-calendar-edit="${esc(date)}">Edit this day's hours</button>`;
 }
-export function renderFun({milestones,achievements,level,comparison,boss}){
-  $('levelCard').innerHTML=`<h3>Outage level</h3><div class="metric-value">${esc(level.name)}</div>`;
-  $('milestoneList').innerHTML=milestones.length?milestones.map(m=>`<div class="milestone-row"><span class="${m.status}">${m.status==='achieved'?'✓':'○'} ${formatMoney(m.amount)}</span><span>${esc(m.date||'—')}</span></div>`).join(''):'<div class="row-sub">No milestone falls inside the current plan.</div>';
-  const icons=['⏱','🪦','☀','⚔','⚡','👹','🏠','🤖','🏁'];
-  $('achievementGrid').innerHTML=achievements.map((a,i)=>`<div class="badge ${a.unlocked?'':'locked'}"><div class="badge-icon">${icons[i]||'★'}</div><div class="badge-name">${esc(a.name)}</div></div>`).join('');
-  $('comparisonCard').innerHTML=`<h3>Things you could have bought</h3><div class="row-sub">${esc(comparison)}</div>`;
-  $('bossCard').innerHTML=boss?`<div class="boss-card"><h3>${esc(boss.title)}</h3><div class="boss-bar"><span style="width:${boss.progress*100}%"></span></div><div class="row-top" style="margin-top:12px"><div><div class="row-title">${esc(boss.remainingLabel)} remaining</div><div class="row-sub">Boss HP: ${boss.hp.toLocaleString()} seconds</div></div><div class="row-value">${formatMoney(boss.earned)}</div></div></div>`:'';
-}
 export function bindUI(actions){
   document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>actions.open(b.dataset.open)));
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>actions.close(b.dataset.close)));
