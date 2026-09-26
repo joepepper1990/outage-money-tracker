@@ -86,7 +86,7 @@ test('mutations fail closed offline and guard against duplicate saves',async()=>
   const app=await read('js/app.js');
   assert.match(app,/let\s+[^;]*saving=false/);
   assert.match(app,/if\(!client\|\|!online\)[^{]*\{[^}]*throw/s);
-  assert.match(app,/if\(saving\)[^{]*\{?[^;]*throw/s);
+  assert.match(app,/if\(saving\)\{[^}]*throw\s+e[^}]*\}/s);
   assert.match(app,/finally\s*\{\s*saving=false/);
   assert.match(app,/e\.code==='offline'/);
 });
