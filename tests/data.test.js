@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseShareFragment, consumeShareFragment, readV1State, normalizeLegacyState,
+  parseShareFragment, parseShareLink, storeShareLink, consumeShareFragment, readV1State, normalizeLegacyState,
   createDataClient, startPolling
 } from '../js/data.js';
 
@@ -94,4 +94,14 @@ test('legacy migration does not rewrite a user-custom 19:00 Friday period',()=>{
   ],expenses:[]};
   const n=normalizeLegacyState(state);
   assert.equal(n.periods[0].end,'19:00');
+});
+
+test('full private share link can be stored inside an existing home-screen installation',()=>{
+  const storage=new MemStorage();
+  const url='https://joepepper1990.github.io/outage-money-tracker/#join=8b65a4d8-2b84-49b8-bb6d-73f1cf2dc504.abcdefghijklmnopqrstuvwxyzABCDEFGH123456';
+  const parsed=parseShareLink(url);
+  assert.equal(parsed.trackerId,'8b65a4d8-2b84-49b8-bb6d-73f1cf2dc504');
+  const stored=storeShareLink(url,storage);
+  assert.equal(stored.accessKey,'abcdefghijklmnopqrstuvwxyzABCDEFGH123456');
+  assert.ok(storage.getItem('outageMoneyTrackerV2Access').includes('abcdefghijklmnopqrstuvwxyzABCDEFGH123456'));
 });

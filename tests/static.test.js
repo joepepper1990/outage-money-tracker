@@ -90,3 +90,18 @@ test('mutations fail closed offline and guard against duplicate saves',async()=>
   assert.match(app,/finally\s*\{\s*saving=false/);
   assert.match(app,/e\.code==='offline'/);
 });
+
+test('unconnected home-screen install exposes one-time shared tracker connection flow',async()=>{
+  const html=await read('index.html');
+  const app=await read('js/app.js');
+  const ui=await read('js/ui.js');
+  assert.match(html,/id="connectPanel"/);
+  assert.match(html,/id="connectForm"/);
+  assert.match(app,/connectShareLink/);
+  assert.match(ui,/showConnectPanel/);
+});
+
+test('service worker cache version is bumped for migration hotfix',async()=>{
+  const sw=await read('sw.js');
+  assert.match(sw,/outage-money-v2-20260926-2/);
+});

@@ -1,5 +1,5 @@
 import * as core from './core.js';
-import {consumeShareFragment,loadLocalCache,saveLocalCache,readV1State,defaultState,createDataClient,startPolling} from './data.js';
+import {consumeShareFragment,storeShareLink,loadLocalCache,saveLocalCache,readV1State,defaultState,createDataClient,startPolling} from './data.js';
 import * as ui from './ui.js';
 import * as fx from './effects.js';
 
@@ -70,20 +70,26 @@ ui.bindUI({
   editExpense(id){const e=state.expenses.find(x=>x.id===id);if(e)ui.setExpenseForm(e,e.date)},
   cancelExpenseEdit:resetExpenseForm,
   async saveExpense(e){if(!e.description.trim()||!(e.amount>0)||!e.date){ui.setInlineError('spend','Enter a description, amount and date.');return}try{await mutate(()=>client.upsertExpense(e));resetExpenseForm()}catch(err){ui.setInlineError('spend',err.message)}},
-  async deleteExpense(id){try{await mutate(()=>client.deleteExpense(id));resetExpenseForm()}catch(e){ui.setInlineError('spend',e.message)}}
+  async deleteExpense(id){try{await mutate(()=>client.deleteExpense(id));resetExpenseForm()}catch(e){ui.setInlineError('spend',e.message)}},
+  connectShareLink(value){
+    const next=storeShareLink(value);
+    if(!next){ui.setConnectError('Paste the full private sharing link.');return}
+    creds=next;client=null;online=false;stopPolling?.();stopPolling=null;
+    ui.setConnectError('');ui.showConnectPanel(false);connect();
+  }
 });
 
 async function connect(){
   renderAll();
-  if(!creds){ui.setSyncStatus('invalid-link');ui.showError('Open the private sharing link once on this device to enable live shared data. Your existing local figures are still visible.');return}
+  if(!creds){ui.setSyncStatus('invalid-link');ui.showError('This installation is not connected yet. Your existing local figures are still visible.');ui.showConnectPanel(true);return}
   client=createDataClient({...CONFIG,...creds});
   ui.setSyncStatus('loading');
   try{
     let remote=await client.getState();
     if(!remote.initialized){const seed=readV1State()||defaultState();const result=await client.seedIfEmpty(seed);remote=result.state}
-    state={periods:remote.periods,expenses:remote.expenses,updatedAt:remote.updatedAt};online=true;saveLocalCache(state);ui.setSyncStatus('synced');ui.showError('');renderAll();
+    state={periods:remote.periods,expenses:remote.expenses,updatedAt:remote.updatedAt};online=true;saveLocalCache(state);ui.setSyncStatus('synced');ui.showError('');ui.showConnectPanel(false);renderAll();
     stopPolling=startPolling({load:()=>client.getState(),intervalMs:4000,onStatus:s=>{online=s==='synced';ui.setSyncStatus(s)},onChange:remote=>{state={periods:remote.periods,expenses:remote.expenses,updatedAt:remote.updatedAt};saveLocalCache(state);renderAll()}});
-  }catch(e){online=false;ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'offline');ui.showError(e.code==='invalid-link'?'This share link is not valid.':'Could not reach shared data. Cached data is read only.');renderAll()}
+  }catch(e){online=false;ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'offline');ui.showError(e.code==='invalid-link'?'This share link is not valid. Paste the current private link below.':'Could not reach shared data. Cached data is read only.');ui.showConnectPanel(e.code==='invalid-link');renderAll()}
 }
 
 function liveTick(){

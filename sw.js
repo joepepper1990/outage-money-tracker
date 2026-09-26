@@ -1,4 +1,4 @@
-const CACHE='outage-money-v2-20260926-1';
+const CACHE='outage-money-v2-20260926-2';
 const SHELL=[
   './','./index.html','./styles.css','./js/core.js','./js/data.js','./js/ui.js','./js/effects.js','./js/app.js',
   './manifest.json','./icon-192.png','./icon-512.png'

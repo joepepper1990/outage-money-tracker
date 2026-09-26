@@ -33,6 +33,15 @@
       <div id="syncStatus" class="sync-status" data-state="loading">● Connecting…</div>
     </section>
     <p id="globalError" class="global-error" hidden></p>
+    <section id="connectPanel" class="connect-card" hidden>
+      <div class="connect-title">Connect shared tracker</div>
+      <p>Paste the private sharing link here once to connect this exact app installation and migrate the data already stored on this phone.</p>
+      <form id="connectForm">
+        <input id="connectLink" type="url" inputmode="url" autocomplete="off" placeholder="Paste private sharing link" required>
+        <button class="primary" type="submit">Connect &amp; migrate</button>
+        <p id="connectError" class="inline-error" hidden></p>
+      </form>
+    </section>
   </main>
 
   <dialog id="hoursDialog" class="sheet">

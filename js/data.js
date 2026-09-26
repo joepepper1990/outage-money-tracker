@@ -15,6 +15,20 @@ export function parseShareFragment(hash=''){
   return {trackerId:m[1],accessKey:m[2]};
 }
 
+export function parseShareLink(value=''){
+  const raw=String(value).trim();
+  if(!raw) return null;
+  if(raw.startsWith('#')) return parseShareFragment(raw);
+  try{return parseShareFragment(new URL(raw,'https://invalid.local').hash)}catch{return null}
+}
+
+export function storeShareLink(value,storage){
+  const creds=parseShareLink(value);
+  if(!creds)return null;
+  storeShareLink(`#join=${creds.trackerId}.${creds.accessKey}`,storage);
+  return creds;
+}
+
 export function loadStoredAccess(storage){
   try{
     const raw=getStorage(storage)?.getItem(ACCESS_KEY);

@@ -85,6 +85,7 @@ export function bindUI(actions){
   $('hoursForm').addEventListener('submit',e=>{e.preventDefault();actions.savePeriod({id:$('periodId').value||undefined,date:$('hoursDate').value,start:$('periodStart').value,end:$('periodEnd').value,multiplier:Number($('periodMultiplier').value)})});
   $('spendForm').addEventListener('submit',e=>{e.preventDefault();actions.saveExpense({id:$('expenseId').value||undefined,description:$('expenseDescription').value,amount:Number($('expenseAmount').value),date:$('expenseDate').value})});
   $('cancelHoursEdit').addEventListener('click',()=>actions.cancelPeriodEdit()); $('cancelSpendEdit').addEventListener('click',()=>actions.cancelExpenseEdit());
+  $('connectForm')?.addEventListener('submit',e=>{e.preventDefault();actions.connectShareLink($('connectLink').value)});
 }
 export function setPeriodForm(p){const editing=!!p?.id;$('periodId').value=p?.id||'';$('periodStart').value=p?.start||'15:30';$('periodEnd').value=p?.end||'16:30';$('periodMultiplier').value=String(p?.multiplier||1.5);$('cancelHoursEdit').hidden=!editing}
 export function setExpenseForm(e,date){$('expenseId').value=e?.id||'';$('expenseDescription').value=e?.description||'';$('expenseAmount').value=e?.amount||'';$('expenseDate').value=e?.date||date;$('cancelSpendEdit').hidden=!e}
@@ -92,3 +93,6 @@ export function setInlineError(kind,message=''){const el=$(kind==='hours'?'hours
 export function showDialog(id){const d=$(id);if(!d.open)d.showModal()}
 export function closeDialog(id){const d=$(id);if(d.open)d.close()}
 export function selectTab(panelId,button){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===panelId));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b===button))}
+
+export function showConnectPanel(show){const el=$('connectPanel');if(el)el.hidden=!show}
+export function setConnectError(message=''){const el=$('connectError');if(!el)return;el.hidden=!message;el.textContent=message}
