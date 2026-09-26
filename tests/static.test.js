@@ -64,3 +64,11 @@ test('calendar day detail exposes a direct edit-hours action',async()=>{
   assert.match(ui,/data-calendar-edit/);
   assert.match(app,/calendarEdit/);
 });
+
+
+test('edge function prefers the service-role JWT for direct REST authorization',async()=>{
+  const fn=await read('supabase/functions/tracker-api/index.ts');
+  const legacy=fn.indexOf("Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')");
+  const modern=fn.indexOf("Deno.env.get('SUPABASE_SECRET_KEYS')");
+  assert.ok(legacy>=0 && modern>=0 && legacy<modern);
+});
