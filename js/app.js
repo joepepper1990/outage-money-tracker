@@ -15,15 +15,6 @@ function modelNow(now=Date.now()){
   const snap=core.calculateSnapshot(now,state),end=core.deriveEndMs(state.periods);
   return{snap,end,completion:core.calculateCompletion(now,state)};
 }
-function comparison(amount){
-  const choices=[
-    `About ${Math.max(1,Math.round(amount/4.25)).toLocaleString()} suspiciously optimistic sausage rolls.`,
-    `${Math.max(1,Math.floor(amount/500))} extremely unnecessary £500 impulse purchases.`,
-    `${Math.max(1,Math.floor(amount/80))} “small” online orders that somehow became £80.`,
-    `Enough to make the phrase “I’ll just do one more shift” financially dangerous.`
-  ];
-  return choices[Math.abs(Math.floor(amount))%choices.length];
-}
 function renderAll(now=Date.now()){
   const {snap,end,completion}=modelNow(now);
   ui.renderHome({snapshot:snap,completion,countdown:core.countdownMessage(now,end)});
@@ -31,8 +22,6 @@ function renderAll(now=Date.now()){
   ui.renderSpend(state);
   ui.renderForecast({date:futureDate,futureBalance:core.calculateProjectedBalance(futureDate,state),earned:snap.earned,remaining:core.calculateRemainingEarnings(now,state),projectedTotal:core.calculateProjectedTotalEarnings(state),spent:snap.spent,endBalance:core.calculateEndBalance(state)});
   ui.renderCalendar({...calendarCursor,state,nowMs:now,core});
-  const activeWeekend=(state.periods||[]).find(p=>{const day=new Date(`${p.date}T12:00:00Z`).getUTCDay();const s=core.ukDateTimeMs(p.date,p.start),e=core.ukDateTimeMs(p.date,p.end);return(day===0||day===6)&&now>=s&&now<e});
-  ui.renderFun({milestones:core.getMilestones(now,state),achievements:core.getAchievements(now,state),level:core.getOutageLevel(now,state),comparison:comparison(snap.earned),boss:fx.bossModel(activeWeekend,now,core)});
 }
 async function refresh(){
   if(!client)return;
@@ -96,7 +85,7 @@ function liveTick(){
   const now=Date.now();const snap=core.calculateSnapshot(now,state);
   const milestones=core.getMilestones(now,state);
   for(const m of milestones)if(lastEarned<m.amount&&snap.earned>=m.amount&&fx.shouldCelebrateOnce(`milestone-${m.amount}`))fx.showMilestoneCelebration(m);
-  for(const p of state.periods||[]){const end=core.ukDateTimeMs(p.date,p.end);if(lastTick<end&&now>=end){const net=core.periodDurationHours(p)*core.hourlyNetRate(p.multiplier);const day=new Date(`${p.date}T12:00:00Z`).getUTCDay();if(day===0||day===6)fx.showBossDefeated(p,net);else fx.showShiftComplete(p,net)}}
+  for(const p of state.periods||[]){const end=core.ukDateTimeMs(p.date,p.end);if(lastTick<end&&now>=end){const net=core.periodDurationHours(p)*core.hourlyNetRate(p.multiplier);fx.showShiftComplete(p,net)}}
   lastEarned=snap.earned;lastTick=now;renderAll(now);
 }
 setInterval(liveTick,1000);
