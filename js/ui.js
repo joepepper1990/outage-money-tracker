@@ -58,7 +58,7 @@ export function renderCalendarDay(date,state,core){
   const ps=(state.periods||[]).filter(p=>p.date===date);
   if(!ps.length){$('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>No overtime planned.</div>`;return;}
   const net=ps.reduce((s,p)=>s+core.periodDurationHours(p)*core.hourlyNetRate(p.multiplier),0);
-  $('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>${ps.map(p=>`${esc(p.start)}–${esc(p.end)} (${p.multiplier}×)`).join('<br>')}</div><div class="row-value" style="margin-top:7px">${formatMoney(net)}</div>`;
+  $('calendarDayDetail').innerHTML=`<strong>${esc(dateFmt.format(dateObj(date)))}</strong><div>${ps.map(p=>`${esc(p.start)}–${esc(p.end)} (${p.multiplier}×)`).join('<br>')}</div><div class="row-value" style="margin-top:7px">${formatMoney(net)}</div><button class="secondary" type="button" data-calendar-edit="${esc(date)}">Edit this day's hours</button>`;
 }
 export function renderFun({milestones,achievements,level,comparison,boss}){
   $('levelCard').innerHTML=`<h3>Outage level</h3><div class="metric-value">${esc(level.name)}</div>`;
@@ -75,7 +75,7 @@ export function bindUI(actions){
   $('hoursDate').addEventListener('change',e=>actions.hoursDate(e.target.value));
   $('futureDate').addEventListener('change',e=>actions.futureDate(e.target.value));
   $('prevMonth').addEventListener('click',()=>actions.month(-1)); $('nextMonth').addEventListener('click',()=>actions.month(1));
-  $('calendarGrid').addEventListener('click',e=>{const b=e.target.closest('[data-date]');if(b)actions.calendarDay(b.dataset.date)});
+  $('calendarGrid').addEventListener('click',e=>{const b=e.target.closest('[data-date]');if(b)actions.calendarDay(b.dataset.date)}); $('calendarDayDetail').addEventListener('click',e=>{const b=e.target.closest('[data-calendar-edit]');if(b)actions.calendarEdit(b.dataset.calendarEdit)});
   $('hoursList').addEventListener('click',e=>{
     const d=e.target.closest('[data-delta]'); if(d)return actions.adjustPeriod(e.target.closest('[data-period-id]').dataset.periodId,Number(d.dataset.delta));
     const edit=e.target.closest('[data-edit-period]'); if(edit)return actions.editPeriod(edit.dataset.editPeriod);

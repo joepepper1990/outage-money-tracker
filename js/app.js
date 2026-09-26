@@ -53,6 +53,7 @@ ui.bindUI({
   futureDate(date){futureDate=date;renderAll()},
   month(delta){calendarCursor.month+=delta;if(calendarCursor.month<0){calendarCursor.month=11;calendarCursor.year--}if(calendarCursor.month>11){calendarCursor.month=0;calendarCursor.year++}renderAll()},
   calendarDay(date){ui.renderCalendarDay(date,state,core)},
+  calendarEdit(date){ui.closeDialog('planDialog');ui.renderHours(date,state,core);resetPeriodForm();ui.showDialog('hoursDialog')},
   editPeriod(id){const p=state.periods.find(x=>x.id===id);if(p)ui.setPeriodForm(p)},
   cancelPeriodEdit:resetPeriodForm,
   async savePeriod(p){const valid=core.validatePeriod(p,state.periods);if(!valid.ok){ui.setInlineError('hours',valid.message);return}try{await mutate(()=>client.upsertPeriod(p));resetPeriodForm()}catch(e){ui.setInlineError('hours',e.message)}},

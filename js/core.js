@@ -142,7 +142,7 @@ export function getAchievements(nowMs,state){
   const completed=periods.filter(p=>nowMs>=ukDateTimeMs(p.date,p.end));
   const hours=completed.reduce((s,p)=>s+periodDurationHours(p),0);
   const doubleHours=completed.filter(p=>Number(p.multiplier)===2).reduce((s,p)=>s+periodDurationHours(p),0);
-  const earned=calculateSnapshot(nowMs,{periods:completed,expenses:[]}).earned;
+  const earned=calculateSnapshot(nowMs,{periods,expenses:[]}).earned;
   const completedDates=new Set(completed.map(p=>p.date));
   const weekendWarrior=completed.some(p=>dayOfWeek(p.date)===6 && completedDates.has(new Date(Date.UTC(...p.date.split('-').map((n,i)=>i===1?Number(n)-1:Number(n)))+86400000).toISOString().slice(0,10)));
   const end=deriveEndMs(periods);

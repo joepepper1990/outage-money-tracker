@@ -2,5 +2,7 @@
   "name": "outage-money-v2",
   "private": true,
   "type": "module",
-  "scripts": {"test": "node --test tests/*.test.js"}
+  "scripts": {
+    "test": "node --check js/core.js && node --check js/data.js && node --check js/ui.js && node --check js/effects.js && node --check js/app.js && node --test tests/*.test.js"
+  }
 }
