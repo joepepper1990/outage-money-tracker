@@ -132,3 +132,10 @@ test('£5K Gremlin unlocks immediately while the threshold is crossed in an acti
   const achievement=getAchievements(now,{periods,expenses:[]}).find(a=>a.id==='5k-gremlin');
   assert.equal(achievement.unlocked,true);
 });
+
+
+test('new overtime defaults to 2x on weekends and 1.5x on weekdays',async()=>{
+  const mod=await import('../js/core.js');
+  assert.equal(mod.defaultMultiplierForDate('2026-09-26'),2);
+  assert.equal(mod.defaultMultiplierForDate('2026-09-25'),1.5);
+});

@@ -72,3 +72,11 @@ test('edge function prefers the service-role JWT for direct REST authorization',
   const modern=fn.indexOf("Deno.env.get('SUPABASE_SECRET_KEYS')");
   assert.ok(legacy>=0 && modern>=0 && legacy<modern);
 });
+
+
+test('calendar allows editing even on a day with no existing overtime and new forms use date rate defaults',async()=>{
+  const ui=await read('js/ui.js');
+  const app=await read('js/app.js');
+  assert.ok((ui.match(/data-calendar-edit/g)||[]).length>=2);
+  assert.match(app,/defaultMultiplierForDate/);
+});
