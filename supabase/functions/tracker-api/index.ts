@@ -26,11 +26,13 @@ function json(req: Request, body: unknown, status = 200) {
 }
 
 function secretKey() {
+  const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (legacy) return legacy;
   const modern = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (modern) {
     try { const parsed = JSON.parse(modern); if (parsed.default) return parsed.default; } catch {}
   }
-  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  return '';
 }
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
