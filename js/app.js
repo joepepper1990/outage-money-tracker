@@ -32,10 +32,28 @@ function renderPay(){
   ui.$('actualList').innerHTML=actuals.length?actuals.map(a=>{const f=a.forecastSnapshot?.netPay,diff=f!=null&&a.netPay!=null?Number(a.netPay)-Number(f):null;return `<div class="list-row"><button type="button" data-edit-actual="${ui.esc(a.id)}"><div class="list-title">${ui.formatMonth(a.payMonth)}</div><div class="list-sub">${ui.formatDate(a.payDate)}${diff==null?'':` · Forecast ${money(f)} · ${diff>=0?'+':''}${money(diff)}`}</div></button><strong>${money(a.netPay)}</strong></div>`}).join(''):empty('No actual payslips yet');
 }
 function renderWork(){
-  ui.$('workMonth').value=workMonth;const periods=state.periods.filter(p=>p.date.startsWith(workMonth)).sort((a,b)=>a.date.localeCompare(b.date));const hours=periods.reduce((s,p)=>s+core.periodDurationHours(p),0);ui.$('workOtTotal').textContent=`${hours.toFixed(1)} h`;
-  ui.$('overtimeList').innerHTML=periods.length?periods.map(p=>`<div class="list-row"><button type="button" data-edit-ot="${ui.esc(p.id)}"><div class="list-title">${ui.formatDate(p.date)}</div><div class="list-sub">${core.periodDurationHours(p).toFixed(2).replace(/\.00$/,'')} h · ${Number(p.multiplier)}×</div></button><strong>${money(pay.overtimePeriodGross(p,state))}</strong></div>`).join(''):empty('No overtime this month');
-  const claims=state.standbyClaims.filter(c=>pay.standbyClaimDates(c).some(d=>d.startsWith(workMonth))).sort((a,b)=>a.date.localeCompare(b.date));const units=claims.reduce((s,c)=>s+pay.standbyClaimDates(c).filter(d=>d.startsWith(workMonth)).length,0);ui.$('workPagerTotal').textContent=`${units} days`;
+  ui.$('workMonth').value=workMonth;
+  const periods=state.periods.filter(p=>p.date.startsWith(workMonth)).sort((a,b)=>a.date.localeCompare(b.date));
+  const hours=periods.reduce((s,p)=>s+core.periodDurationHours(p),0);
+  ui.$('workOtTotal').textContent=`${hours.toFixed(1)} h`;
+  ui.$('overtimeList').innerHTML=periods.length?periods.map(p=>{
+    const h=core.periodDurationHours(p);
+    const shownHours=h.toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1');
+    return `<form class="inline-ot-row" data-inline-ot-form data-ot-id="${ui.esc(p.id)}">
+      <div class="inline-ot-fields">
+        <label class="field"><span>Date</span><input data-ot-date type="date" value="${ui.esc(p.date)}" required></label>
+        <label class="field"><span>Hours</span><input data-ot-hours type="number" min="0.25" max="24" step="0.25" inputmode="decimal" value="${ui.esc(shownHours)}" required></label>
+        <label class="field"><span>Rate</span><select data-ot-rate><option value="1.5" ${Number(p.multiplier)===1.5?'selected':''}>1.5×</option><option value="2" ${Number(p.multiplier)===2?'selected':''}>2×</option></select></label>
+      </div>
+      <div class="inline-ot-actions"><button class="inline-save" type="submit">Save</button><button class="inline-delete" type="button" data-delete-inline-ot="${ui.esc(p.id)}">Delete</button></div>
+      <p class="inline-error" data-inline-ot-error hidden></p>
+    </form>`;
+  }).join(''):empty('No overtime this month');
+  const claims=state.standbyClaims.filter(c=>pay.standbyClaimDates(c).some(d=>d.startsWith(workMonth))).sort((a,b)=>a.date.localeCompare(b.date));
+  const units=claims.reduce((s,c)=>s+pay.standbyClaimDates(c).filter(d=>d.startsWith(workMonth)).length,0);
+  ui.$('workPagerTotal').textContent=`${units} days`;
   ui.$('standbyList').innerHTML=claims.length?claims.map(c=>`<div class="list-row"><button type="button" data-edit-standby="${ui.esc(c.id)}"><div class="list-title">${ui.formatDate(c.date)}</div><div class="list-sub">Starts here · ${Number(c.units)} day${Number(c.units)===1?'':'s'}${c.publicHoliday?' · Public holiday':''}</div></button><strong>${money(pay.standbyClaimGross(c,state))}</strong></div>`).join(''):empty('No pager days this month');
+  if(!ui.value('addOtDate')) resetOvertimeAddForm();
 }
 function renderForecast(){
   const start=currentNextMonth(),rows=pay.payrollForecast(state,start,forecastLength),proj=pay.taxYearProjection(state,ui.today());ui.$('taxYearLabel').textContent=proj.taxYear;ui.$('taxYearTaxable').textContent=money(proj.projectedTaxable);ui.$('taxYearTax').textContent=money(proj.projectedTax);
