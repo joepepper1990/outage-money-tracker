@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  BASIC_HOURLY_RATE, NET_FACTOR, DEFAULT_PERIODS, hourlyNetRate, ukDateTimeMs,
+  BASIC_HOURLY_RATE, MARGINAL_INCOME_TAX_RATE, MARGINAL_NI_RATE, NET_FACTOR,
+  PAYROLL_GROSS_OT_RATES, DEFAULT_PERIODS, grossHourlyRate, hourlyNetRate, ukDateTimeMs,
   periodDurationHours, earnedForPeriod, calculateSnapshot, calculateProjectedBalance,
   calculateRemainingEarnings, calculateProjectedTotalEarnings, calculateEndBalance,
   calculateCompletion, deriveEndMs, getMilestones, getAchievements, getOutageLevel,
@@ -10,32 +11,58 @@ import {
 
 const close = (a,b,eps=1e-6)=>assert.ok(Math.abs(a-b)<eps, `${a} != ${b}`);
 
-test('pay constants and net rates are exact', () => {
+test('pay constants use payslip-calibrated overtime rates and current marginal deductions', () => {
   assert.equal(BASIC_HOURLY_RATE, 37.21);
+  assert.equal(MARGINAL_INCOME_TAX_RATE, 0.40);
+  assert.equal(MARGINAL_NI_RATE, 0.02);
   assert.equal(NET_FACTOR, 0.58);
-  assert.equal(hourlyNetRate(1.5), 32.3727);
-  assert.equal(hourlyNetRate(2), 43.1636);
+  close(PAYROLL_GROSS_OT_RATES[1.5], 2316.26 / 41.5);
+  close(PAYROLL_GROSS_OT_RATES[2], 3348.78 / 45);
+  close(grossHourlyRate(1.5), 2316.26 / 41.5);
+  close(grossHourlyRate(2), 3348.78 / 45);
+  close(hourlyNetRate(1.5), (2316.26 / 41.5) * 0.58);
+  close(hourlyNetRate(2), (3348.78 / 45) * 0.58);
 });
 
-test('corrected default schedule totals 212 hours and £8103.9659', () => {
+test('September payroll hours reproduce the October payslip overtime lines', () => {
+  const sep=DEFAULT_PERIODS.filter(p=>p.date.startsWith('2026-09-'));
+  const h15=sep.filter(p=>p.multiplier===1.5).reduce((s,p)=>s+periodDurationHours(p),0);
+  const h2=sep.filter(p=>p.multiplier===2).reduce((s,p)=>s+periodDurationHours(p),0);
+  close(h15,41.5);
+  close(h2,45);
+  close(h15*grossHourlyRate(1.5),2316.26);
+  close(h2*grossHourlyRate(2),3348.78);
+  close(h15*hourlyNetRate(1.5)+h2*hourlyNetRate(2),3285.7232);
+});
+
+test('default schedule mirrors the live tracker and projects £8217.00 net', () => {
   const hours = DEFAULT_PERIODS.reduce((s,p)=>s+periodDurationHours(p),0);
-  close(hours, 212);
-  close(calculateProjectedTotalEarnings({periods:DEFAULT_PERIODS,expenses:[]}), 8103.9659);
+  close(hours, 215.5);
+  close(calculateProjectedTotalEarnings({periods:DEFAULT_PERIODS,expenses:[]}), 8217.004697188755);
+  assert.equal(DEFAULT_PERIODS.find(p=>p.date==='2026-09-23')?.end,'19:00');
+  assert.equal(DEFAULT_PERIODS.find(p=>p.date==='2026-09-30')?.end,'19:00');
+  assert.equal(DEFAULT_PERIODS.find(p=>p.date==='2026-10-15')?.end,'16:00');
   const shortDates = ['2026-09-18','2026-10-02','2026-10-16','2026-10-30'];
   for (const date of shortDates) assert.equal(DEFAULT_PERIODS.find(p=>p.date===date)?.end, '16:30');
+});
+
+test('payslip-calibrated earned total through 24 October is £6021.13', () => {
+  const now=ukDateTimeMs('2026-10-25','06:48');
+  const snap=calculateSnapshot(now,{periods:DEFAULT_PERIODS,expenses:[]});
+  close(snap.totalNet,6021.128787469879);
 });
 
 test('half-complete 12-hour 2x shift earns exactly half final net', () => {
   const p={id:'x',date:'2026-09-26',start:'07:00',end:'19:00',multiplier:2};
   const noon=ukDateTimeMs('2026-09-26','13:00');
-  close(earnedForPeriod(p,noon), 6*43.1636);
+  close(earnedForPeriod(p,noon), 6*hourlyNetRate(2));
 });
 
 test('future-dated expense subtracts immediately from current balance', () => {
   const p={id:'x',date:'2026-09-26',start:'07:00',end:'19:00',multiplier:2};
   const now=ukDateTimeMs('2026-09-26','13:00');
   const snap=calculateSnapshot(now,{periods:[p],expenses:[{id:'e',description:'Holiday',amount:200,date:'2026-12-01'}]});
-  close(snap.totalNet, 6*43.1636-200);
+  close(snap.totalNet, 6*hourlyNetRate(2)-200);
 });
 
 test('future balance truncates overtime at selected day end and subtracts all spend', () => {
@@ -44,7 +71,7 @@ test('future balance truncates overtime at selected day end and subtracts all sp
     {id:'b',date:'2026-09-27',start:'07:00',end:'19:00',multiplier:2},
   ];
   const state={periods,expenses:[{id:'e',description:'x',amount:100,date:'2026-10-01'}]};
-  close(calculateProjectedBalance('2026-09-26',state),12*43.1636-100);
+  close(calculateProjectedBalance('2026-09-26',state),12*hourlyNetRate(2)-100);
 });
 
 test('remaining earnings counts only unearned planned overtime', () => {
@@ -53,12 +80,12 @@ test('remaining earnings counts only unearned planned overtime', () => {
     {id:'b',date:'2026-09-27',start:'07:00',end:'19:00',multiplier:2},
   ];
   const now=ukDateTimeMs('2026-09-26','13:00');
-  close(calculateRemainingEarnings(now,{periods,expenses:[]}),18*43.1636);
+  close(calculateRemainingEarnings(now,{periods,expenses:[]}),18*hourlyNetRate(2));
 });
 
 test('end balance is projected earnings minus all expenses', () => {
   const state={periods:[{id:'a',date:'2026-09-26',start:'07:00',end:'19:00',multiplier:2}],expenses:[{id:'e',description:'x',amount:100,date:'2027-01-01'}]};
-  close(calculateEndBalance(state),12*43.1636-100);
+  close(calculateEndBalance(state),12*hourlyNetRate(2)-100);
 });
 
 test('completion is earnings progress and ignores expenses', () => {
