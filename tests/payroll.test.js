@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   BASE_PROFILE, roundMoney, payDateForMonth, taxPeriodForDate, codeFreePayAnnual,
   cumulativePayeDue, employeeNI, holidayBonusFromQualifyingOt, emergencyForMonth,
-  payrollForMonth, qualifyingOtPaidInYear, overtimeForPayMonth, salaryAt, dealArrearsForPayMonth, standbyRateAt
+  payrollForMonth, qualifyingOtPaidInYear, overtimeForPayMonth, salaryAt, dealArrearsForPayMonth, standbyRateAt, standbyClaimDates, standbyForPayMonth
 } from '../js/payroll.js';
 
 const close=(a,b,eps=.011)=>assert.ok(Math.abs(a-b)<=eps,`${a} != ${b}`);
@@ -106,4 +106,12 @@ test('effective emergency and pager overrides are used and continue scaling with
   close(emergencyForMonth('2027-09',s),56.10,.02);
   close(standbyRateAt('2027-05-15',s),42,.001);
   close(standbyRateAt('2027-09-15',s),42.84,.01);
+});
+
+
+test('pager entry uses start date plus inclusive day count and splits month boundary correctly',()=>{
+  const s={...baseState,standbyClaims:[{id:'p',date:'2026-10-30',units:4}]};
+  assert.deepEqual(standbyClaimDates(s.standbyClaims[0]),['2026-10-30','2026-10-31','2026-11-01','2026-11-02']);
+  assert.equal(standbyForPayMonth('2026-11',s).units,2);
+  assert.equal(standbyForPayMonth('2026-12',s).units,2);
 });
