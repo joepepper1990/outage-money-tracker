@@ -112,7 +112,20 @@ export function standbyRateAt(date,state,excludeDealId=null){
   const baseSalary=salaryAt(baseDate,state,excludeDealId),currentSalary=salaryAt(date,state,excludeDealId);
   return baseRate*(baseSalary?currentSalary/baseSalary:1);
 }
-export function standbyClaimGross(claim,state,excludeDealId=null){const rate=claim.rateOverride!=null?Number(claim.rateOverride):standbyRateAt(claim.date,state,excludeDealId);return roundMoney(roundMoney(rate)*Number(claim.units||0))}
+export function standbyClaimDates(claim){
+  const count=Math.max(0,Math.floor(Number(claim?.units)||0)),out=[];
+  let d=utcDate(claim.date);
+  for(let i=0;i<count;i++){out.push(d.toISOString().slice(0,10));d=new Date(d.getTime()+DAY_MS)}
+  return out;
+}
+export function standbyClaimGross(claim,state,excludeDealId=null){
+  let total=0;
+  for(const date of standbyClaimDates(claim)){
+    const rate=claim.rateOverride!=null?Number(claim.rateOverride):standbyRateAt(date,state,excludeDealId);
+    total+=roundMoney(rate);
+  }
+  return roundMoney(total);
+}
 export function paymentMonthForWorkDate(date){return addMonths(monthKey(date),1)}
 
 function recurringForMonth(month,state){return(state?.recurringItems||[]).filter(i=>compareMonth(month,i.startPayMonth||'0000-01')>=0&&(!i.endPayMonth||compareMonth(month,i.endPayMonth)<=0))}
@@ -123,7 +136,16 @@ export function overtimeForPayMonth(month,state,excludeDealId=null){
   for(const p of state?.periods||[]){if(monthKey(p.date)!==workMonth)continue;const h=periodDurationHours(p),v=overtimePeriodGross(p,state,excludeDealId);if(Number(p.multiplier)===2){h2+=h;pay2+=v}else{h15+=h;pay15+=v}}
   return{h15,h2,pay15:roundMoney(pay15),pay2:roundMoney(pay2),total:roundMoney(pay15+pay2)};
 }
-export function standbyForPayMonth(month,state,excludeDealId=null){const workMonth=previousMonth(month);let units=0,total=0;for(const c of state?.standbyClaims||[]){if(monthKey(c.date)!==workMonth)continue;units+=Number(c.units||0);total+=standbyClaimGross(c,state,excludeDealId)}return{units,total:roundMoney(total)}}
+export function standbyForPayMonth(month,state,excludeDealId=null){
+  const workMonth=previousMonth(month);let units=0,total=0;
+  for(const c of state?.standbyClaims||[])for(const date of standbyClaimDates(c)){
+    if(monthKey(date)!==workMonth)continue;
+    units+=1;
+    const rate=c.rateOverride!=null?Number(c.rateOverride):standbyRateAt(date,state,excludeDealId);
+    total+=roundMoney(rate);
+  }
+  return{units,total:roundMoney(total)};
+}
 
 function earliestDealEffective(deal){return dealComponents(deal).map(c=>c.effectiveDate).filter(Boolean).sort()[0]||null}
 function pensionRateForMonth(month,state){return pensionRateAt(monthLastDate(month),state)}
@@ -139,7 +161,11 @@ export function dealArrearsForPayMonth(month,state){
       out.salary+=salaryDiff;out.emergency+=emergencyDiff;out.pension+=roundMoney(salaryDiff*pensionRateForMonth(m,state));
     }
     for(const p of state?.periods||[]){if(String(p.date)<first||compareMonth(paymentMonthForWorkDate(p.date),month)>=0)continue;out.ot+=roundMoney(overtimePeriodGross(p,state)-overtimePeriodGross(p,state,deal.id))}
-    for(const c of state?.standbyClaims||[]){if(String(c.date)<first||compareMonth(paymentMonthForWorkDate(c.date),month)>=0)continue;out.standby+=roundMoney(standbyClaimGross(c,state)-standbyClaimGross(c,state,deal.id))}
+    for(const c of state?.standbyClaims||[])for(const date of standbyClaimDates(c)){
+      if(String(date)<first||compareMonth(paymentMonthForWorkDate(date),month)>=0)continue;
+      if(c.rateOverride!=null)continue;
+      out.standby+=roundMoney(standbyRateAt(date,state)-standbyRateAt(date,state,deal.id));
+    }
   }
   for(const k of ['salary','emergency','ot','standby','pension'])out[k]=roundMoney(out[k]);
   out.totalGross=roundMoney(out.salary+out.emergency+out.ot+out.standby);return out;
