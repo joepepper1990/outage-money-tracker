@@ -1,4 +1,4 @@
-const CACHE='pay-tracker-v3-20261025-1';
+const CACHE='pay-tracker-v3-20261025-2';
 const SHELL=['./','./index.html','./styles.css','./js/core.js','./js/payroll.js','./js/data.js','./js/ui.js','./js/app.js','./manifest.json','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>(k.startsWith('outage-money-v2-')||k.startsWith('pay-tracker-v3-'))&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
