@@ -48,7 +48,7 @@ const num=(v:any)=>v==null?null:Number(v);
 const bool=(v:any)=>!!v;
 const cleanTime=(v:string)=>String(v||'').slice(0,5);
 const monthDate=(v:string)=>`${String(v||'').slice(0,7)}-01`;
-function periodOut(r:any){return{id:r.id,date:r.work_date,start:cleanTime(r.start_time),end:cleanTime(r.end_time),multiplier:Number(r.multiplier)}}
+function periodOut(r:any){return{id:r.id,date:r.work_date,hours:Number(r.hours),start:cleanTime(r.start_time),end:cleanTime(r.end_time),multiplier:Number(r.multiplier)}}
 function expenseOut(r:any){return{id:r.id,description:r.description,amount:Number(r.amount),date:r.expense_date}}
 function profileOut(r:any){if(!r)return null;return{
   annualSalary:Number(r.annual_salary),salaryEffectiveDate:r.salary_effective_date,pensionRate:Number(r.pension_rate),pensionEffectiveDate:r.pension_effective_date,
@@ -68,7 +68,7 @@ function actualOut(r:any){return{
 }}
 async function getState(trackerId:string,trackerRow?:any){
   const [periods,expenses,profiles,standby,payrollEvents,payDeals,recurring,actuals]=await Promise.all([
-    db(`overtime_periods?tracker_id=eq.${trackerId}&select=id,work_date,start_time,end_time,multiplier,updated_at&order=work_date.asc,start_time.asc`),
+    db(`overtime_periods?tracker_id=eq.${trackerId}&select=id,work_date,hours,start_time,end_time,multiplier,updated_at&order=work_date.asc,created_at.asc`),
     db(`expenses?tracker_id=eq.${trackerId}&select=id,description,amount,expense_date,updated_at&order=expense_date.asc,created_at.asc`),
     db(`payroll_profiles?tracker_id=eq.${trackerId}&select=*&limit=1`),
     db(`standby_claims?tracker_id=eq.${trackerId}&select=*&order=work_date.asc`),
@@ -81,7 +81,7 @@ async function getState(trackerId:string,trackerRow?:any){
   const stamps=[trackerRow?.updated_at,...all.map((r:any)=>r.updated_at)].filter(Boolean);const updatedAt=stamps.sort().at(-1)||new Date(0).toISOString();
   return {periods:periods.map(periodOut),expenses:expenses.map(expenseOut),profile:profileOut(profiles[0]),standbyClaims:standby.map(standbyOut),payrollEvents:payrollEvents.map(eventOut),payDeals:payDeals.map(dealOut),recurringItems:recurring.map(recurringOut),actuals:actuals.map(actualOut),updatedAt,initialized:!!trackerRow?.initialized_at};
 }
-function validatePeriod(p:any){if(!p||!dateRe.test(p.date)||!timeRe.test(p.start)||!timeRe.test(p.end)||p.end<=p.start)throw Object.assign(new Error('Enter a valid date, start and finish time.'),{status:400});if(![1.5,2].includes(Number(p.multiplier)))throw Object.assign(new Error('Choose a valid overtime rate.'),{status:400})}
+function validatePeriod(p:any){if(!p||!dateRe.test(p.date)||!(Number(p.hours)>0)||Number(p.hours)>24)throw Object.assign(new Error('Enter a valid date and overtime hours.'),{status:400});if(![1.5,2].includes(Number(p.multiplier)))throw Object.assign(new Error('Choose a valid overtime rate.'),{status:400})}
 function validateExpense(e:any){if(!e||!dateRe.test(e.date)||!String(e.description||'').trim()||String(e.description).trim().length>160||!(Number(e.amount)>0))throw Object.assign(new Error('Enter a valid description, amount and date.'),{status:400})}
 function validateStandby(c:any){if(!c||!dateRe.test(c.date)||!(Number(c.units)>0)||Number(c.units)>62)throw Object.assign(new Error('Enter a valid pager date and number of days.'),{status:400})}
 function validateDeal(d:any){if(!d||!String(d.name||'').trim()||!dateRe.test(d.agreedDate)||!Array.isArray(d.components)||!d.components.length)throw Object.assign(new Error('Enter a pay deal name, agreed date and at least one change.'),{status:400});for(const c of d.components){if(!['percent','fixed','lump'].includes(c.type)||!dateRe.test(c.effectiveDate)||!(Number(c.value)>0))throw Object.assign(new Error('One of the pay deal changes is incomplete.'),{status:400});if(c.type==='lump'&&!monthRe.test(c.paymentMonth||''))throw Object.assign(new Error('Choose the payroll month for the lump sum.'),{status:400})}}
@@ -102,7 +102,7 @@ Deno.serve(async(req:Request)=>{
       }
       case 'upsertPeriod':{
         validatePeriod(body.period);const id=uuidOrNew(body.period.id);const existing=await db(`overtime_periods?id=eq.${id}&select=tracker_id`);if(existing[0]&&existing[0].tracker_id!==trackerId)return json(req,{error:'not-found'},404);
-        const rows=await db('overtime_periods?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id,tracker_id:trackerId,work_date:body.period.date,start_time:body.period.start,end_time:body.period.end,multiplier:Number(body.period.multiplier)})});return json(req,{period:periodOut(rows[0])});
+        const rows=await db('overtime_periods?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({id,tracker_id:trackerId,work_date:body.period.date,hours:Number(body.period.hours),start_time:null,end_time:null,multiplier:Number(body.period.multiplier)})});return json(req,{period:periodOut(rows[0])});
       }
       case 'deletePeriod':if(!uuidRe.test(body.id||''))return json(req,{error:'not-found'},404);await db(`overtime_periods?id=eq.${body.id}&tracker_id=eq.${trackerId}`,{method:'DELETE'});return json(req,{ok:true});
       case 'upsertExpense':{
