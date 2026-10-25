@@ -127,12 +127,37 @@ document.addEventListener('click',e=>{
   const ev=e.target.closest('[data-edit-event]');if(ev){openChange(state.payrollEvents.find(x=>x.id===ev.dataset.editEvent));return}
   if(e.target.closest('[data-remove-component]')){e.target.closest('[data-component]')?.remove()}
 });
-ui.$('workMonth').addEventListener('change',e=>{workMonth=e.target.value||workMonth;renderWork()});ui.$('forecastLength').addEventListener('change',e=>{forecastLength=Number(e.target.value)||12;renderForecast()});
+ui.$('workMonth').addEventListener('change',e=>{workMonth=e.target.value||workMonth;resetOvertimeAddForm();renderWork()});ui.$('forecastLength').addEventListener('change',e=>{forecastLength=Number(e.target.value)||12;renderForecast()});
 ui.$('addPayDealBtn').onclick=()=>openDeal();ui.$('addSchemeBtn').onclick=()=>openScheme();ui.$('addChangeBtn').onclick=()=>openChange();ui.$('editProfileBtn').onclick=openProfile;ui.$('addDealComponent').onclick=()=>addDealComponent({type:'percent',effectiveDate:'2027-04-06',basis:'current'});
 
 ui.$('connectForm').addEventListener('submit',e=>{e.preventDefault();const next=storeShareLink(ui.value('connectLink'));if(!next){ui.inlineError('connectError','Paste the full private link.');return}creds=next;client=null;online=false;stopPolling?.();stopPolling=null;ui.setConnectPanel(false);connect()});
-ui.$('overtimeForm').addEventListener('submit',async e=>{e.preventDefault();const p={id:ui.value('otId')||undefined,date:ui.value('otDate'),hours:Number(ui.value('otHours')),multiplier:Number(ui.value('otRate'))},valid=core.validatePeriod(p,state.periods);if(!valid.ok){ui.inlineError('otError',valid.message);return}try{await mutate(()=>client.upsertPeriod(p));ui.closeDialog('overtimeDialog')}catch(err){ui.inlineError('otError',err.message)}});
-ui.$('deleteOtBtn').onclick=async()=>{const id=ui.value('otId');if(!id)return;try{await mutate(()=>client.deletePeriod(id));ui.closeDialog('overtimeDialog')}catch(e){ui.inlineError('otError',e.message)}};
+ui.$('overtimeAddForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const p={date:ui.value('addOtDate'),hours:Number(ui.value('addOtHours')),multiplier:Number(ui.value('addOtRate'))};
+  const valid=core.validatePeriod(p,state.periods);
+  if(!valid.ok){ui.inlineError('addOtError',valid.message);return}
+  try{
+    await mutate(()=>client.upsertPeriod(p));
+    resetOvertimeAddForm(p.date);
+  }catch(err){ui.inlineError('addOtError',err.message)}
+});
+ui.$('overtimeList').addEventListener('submit',async e=>{
+  const form=e.target.closest('[data-inline-ot-form]');
+  if(!form)return;
+  e.preventDefault();
+  const error=form.querySelector('[data-inline-ot-error]');
+  const p={
+    id:form.dataset.otId,
+    date:form.querySelector('[data-ot-date]').value,
+    hours:Number(form.querySelector('[data-ot-hours]').value),
+    multiplier:Number(form.querySelector('[data-ot-rate]').value)
+  };
+  const valid=core.validatePeriod(p,state.periods);
+  if(!valid.ok){if(error){error.textContent=valid.message;error.hidden=false}return}
+  if(error)error.hidden=true;
+  try{await mutate(()=>client.upsertPeriod(p))}
+  catch(err){if(error){error.textContent=err.message;error.hidden=false}}
+});
 ui.$('standbyForm').addEventListener('submit',async e=>{e.preventDefault();const c={id:ui.value('standbyId')||undefined,date:ui.value('standbyDate'),units:Math.floor(Number(ui.value('standbyUnits'))),publicHoliday:ui.$('standbyPublic').checked};try{await mutate(()=>client.upsertStandby(c));ui.closeDialog('standbyDialog')}catch(err){ui.inlineError('standbyError',err.message)}});
 ui.$('deleteStandbyBtn').onclick=async()=>{const id=ui.value('standbyId');if(!id)return;try{await mutate(()=>client.deleteStandby(id));ui.closeDialog('standbyDialog')}catch(e){ui.inlineError('standbyError',e.message)}};
 ui.$('actualForm').addEventListener('submit',async e=>{e.preventDefault();const month=ui.value('actualMonth'),forecast=pay.payrollForMonth(month,state);const a={id:ui.value('actualId')||undefined,payMonth:month,payDate:ui.value('actualDate'),taxPeriod:pay.taxPeriodForDate(ui.value('actualDate')),taxCode:ui.value('actualTaxCode').trim().toUpperCase(),taxBasis:'cumulative',niCategory:ui.value('actualNiCategory').trim().toUpperCase()||'A',netPay:ui.numValue('actualNet'),payeTax:ui.numValue('actualTax'),employeeNi:ui.numValue('actualNi'),pension:ui.numValue('actualPension'),ytdTaxable:ui.numValue('actualYtdTaxable'),ytdTax:ui.numValue('actualYtdTax'),ytdNi:ui.numValue('actualYtdNi'),ytdPension:ui.numValue('actualYtdPension'),basicPay:ui.numValue('actualBasic'),emergencyPay:ui.numValue('actualEmergency'),standbyDays:ui.numValue('actualStandbyDays'),standbyPay:ui.numValue('actualStandbyPay'),ot15Hours:ui.numValue('actualOt15Hours'),ot15Pay:ui.numValue('actualOt15Pay'),ot2Hours:ui.numValue('actualOt2Hours'),ot2Pay:ui.numValue('actualOt2Pay'),holidayBonus:ui.numValue('actualHoliday'),grossTaxable:ui.numValue('actualGrossTaxable'),taxableBenefits:ui.numValue('actualBenefits'),forecastSnapshot:forecast.status==='forecast'?forecast:(forecast.forecastSnapshot||null)};try{await mutate(()=>client.upsertActualPayslip(a));ui.closeDialog('actualDialog')}catch(err){ui.inlineError('actualError',err.message)}});
@@ -147,4 +172,4 @@ ui.$('profileForm').addEventListener('submit',async e=>{e.preventDefault();const
 window.addEventListener('online',()=>refresh());window.addEventListener('offline',()=>{online=false;ui.setSyncStatus('offline');ui.setReadOnly(true)});window.addEventListener('beforeunload',()=>stopPolling?.());if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 renderAll();connect();
 
-ui.$('otDate')?.addEventListener('change',e=>{if(!ui.value('otId'))ui.setValue('otRate',core.defaultMultiplierForDate(e.target.value));});
+ui.$('addOtDate')?.addEventListener('change',e=>ui.setValue('addOtRate',core.defaultMultiplierForDate(e.target.value)));
