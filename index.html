@@ -49,7 +49,7 @@
         </article>
 
         <article class="card">
-          <div class="section-head"><h2>Actual payslips</h2><button id="addActualBtn" class="text-button" type="button">Add</button></div>
+          <div class="section-head"><h2>Actual payslips</h2></div>
           <div id="actualList" class="simple-list"></div>
         </article>
       </section>
@@ -102,7 +102,7 @@
     <form id="overtimeForm" class="sheet-body stack">
       <input id="otId" type="hidden">
       <label class="field"><span>Date</span><input id="otDate" type="date" required></label>
-      <div class="form-grid"><label class="field"><span>Start</span><input id="otStart" type="time" required></label><label class="field"><span>Finish</span><input id="otEnd" type="time" required></label></div>
+      <label class="field"><span>Hours</span><input id="otHours" type="number" min="0.25" max="24" step="0.25" inputmode="decimal" required></label>
       <label class="field"><span>Rate</span><select id="otRate"><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
       <p id="otError" class="inline-error" hidden></p>
       <button class="primary" type="submit">Save overtime</button>
@@ -114,8 +114,8 @@
     <div class="sheet-head"><h2>Pager</h2><button type="button" data-close="standbyDialog">×</button></div>
     <form id="standbyForm" class="sheet-body stack">
       <input id="standbyId" type="hidden">
-      <label class="field"><span>Date</span><input id="standbyDate" type="date" required></label>
-      <label class="field"><span>Days</span><input id="standbyUnits" type="number" min="0.25" step="0.25" inputmode="decimal" required></label>
+      <label class="field"><span>Start date</span><input id="standbyDate" type="date" required></label>
+      <label class="field"><span>Days (incl. start)</span><input id="standbyUnits" type="number" min="1" max="62" step="1" inputmode="numeric" required></label>
       <label class="check-row"><input id="standbyPublic" type="checkbox"> Public holiday</label>
       <p id="standbyError" class="inline-error" hidden></p>
       <button class="primary" type="submit">Save pager</button>
