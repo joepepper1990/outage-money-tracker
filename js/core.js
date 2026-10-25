@@ -81,6 +81,8 @@ export function ukDateTimeMs(dateStr,timeStr){
 }
 
 export function periodDurationHours(period){
+  const stored=Number(period?.hours);
+  if(Number.isFinite(stored)&&stored>0) return stored;
   const start=ukDateTimeMs(period.date,period.start);
   const end=ukDateTimeMs(period.date,period.end);
   return Math.max(0,(end-start)/3600000);
@@ -216,8 +218,14 @@ export function adjustPeriodFinish(period,deltaMinutes){
 }
 
 export function validatePeriod(candidate,periods=[]){
-  if(!candidate?.date||!/^\d{2}:\d{2}$/.test(candidate.start||'')||!/^\d{2}:\d{2}$/.test(candidate.end||'')) return {ok:false,message:'Enter a date, start time and finish time.'};
+  if(!candidate?.date) return {ok:false,message:'Choose the overtime date.'};
   if(![1.5,2].includes(Number(candidate.multiplier))) return {ok:false,message:'Choose a valid overtime rate.'};
+  const hours=Number(candidate.hours);
+  if(Number.isFinite(hours)){
+    if(hours<=0||hours>24) return {ok:false,message:'Enter overtime hours between 0 and 24.'};
+    return {ok:true,message:''};
+  }
+  if(!/^\d{2}:\d{2}$/.test(candidate.start||'')||!/^\d{2}:\d{2}$/.test(candidate.end||'')) return {ok:false,message:'Enter overtime hours.'};
   if(candidate.end<=candidate.start) return {ok:false,message:'Finish time must be after start time.'};
   const overlap=periods.some(p=>p.id!==candidate.id&&p.date===candidate.date&&candidate.start<p.end&&candidate.end>p.start);
   if(overlap) return {ok:false,message:'This overlaps another overtime period on the same date.'};
