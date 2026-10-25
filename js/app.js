@@ -76,7 +76,27 @@ async function mutate(fn){if(!client||!online){ui.showError('Reconnect before ma
 async function connect(){renderAll();if(!creds){ui.setSyncStatus('invalid-link');ui.setConnectPanel(true);ui.setReadOnly(true);return}client=createDataClient({...CONFIG,...creds});ui.setSyncStatus('loading');try{let remote=await client.getState();if(!remote.initialized){const seed=readV1State()||defaultState(),r=await client.seedIfEmpty(seed);remote=r.state}state=normalizeState(remote);online=true;saveLocalCache(state);ui.setSyncStatus('synced');ui.setConnectPanel(false);ui.setReadOnly(false);renderAll();stopPolling?.();stopPolling=startPolling({load:()=>client.getState(),onStatus:s=>{online=s==='synced';ui.setSyncStatus(s);ui.setReadOnly(!online)},onChange:r=>{state=normalizeState(r);saveLocalCache(state);renderAll()}})}catch(e){online=false;ui.setSyncStatus(e.code==='invalid-link'?'invalid-link':'offline');ui.setReadOnly(true);ui.setConnectPanel(e.code==='invalid-link');ui.showError(e.code==='invalid-link'?'Paste the current private link.':'Could not reach shared data.');renderAll()}}
 
 function defaultWorkDate(){const t=ui.today();return t.startsWith(workMonth)?t:`${workMonth}-01`}
-function openOvertime(p=null){const date=p?.date||defaultWorkDate();ui.setValue('otId',p?.id||'');ui.setValue('otDate',date);ui.setValue('otHours',p?core.periodDurationHours(p):1);ui.setValue('otRate',p?.multiplier||core.defaultMultiplierForDate(date));ui.$('deleteOtBtn').hidden=!p;ui.inlineError('otError','');ui.openDialog('overtimeDialog')}
+function resetOvertimeAddForm(date=defaultWorkDate()){
+  ui.setValue('addOtDate',date);
+  ui.setValue('addOtHours',1);
+  ui.setValue('addOtRate',core.defaultMultiplierForDate(date));
+  ui.inlineError('addOtError','');
+}
+function jumpToOvertime(useCurrentMonth=false){
+  if(useCurrentMonth){
+    workMonth=ui.today().slice(0,7);
+    ui.$('workMonth').value=workMonth;
+    resetOvertimeAddForm(ui.today());
+  }else if(!ui.value('addOtDate')||!ui.value('addOtDate').startsWith(workMonth)){
+    resetOvertimeAddForm();
+  }
+  ui.showPage('work');
+  renderWork();
+  requestAnimationFrame(()=>{
+    ui.$('overtimeCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+    ui.$('addOtHours')?.focus({preventScroll:true});
+  });
+}
 function openStandby(c=null){ui.setValue('standbyId',c?.id||'');ui.setValue('standbyDate',c?.date||defaultWorkDate());ui.setValue('standbyUnits',c?.units||1);ui.$('standbyPublic').checked=!!c?.publicHoliday;ui.$('deleteStandbyBtn').hidden=!c;ui.inlineError('standbyError','');ui.openDialog('standbyDialog')}
 function payslipEntryMonth(){const t=ui.today(),m=t.slice(0,7),pd=pay.payDateForMonth(m,state.profile);return t>=pd?m:pay.previousMonth(m)}
 function openActual(a=null,month=null){const m=month||a?.payMonth||payslipEntryMonth(),f=a||pay.payrollForMonth(m,state);ui.setValue('actualId',a?.id||'');ui.setValue('actualMonth',m);ui.setValue('actualDate',f.payDate||pay.payDateForMonth(m,state.profile));ui.setValue('actualTaxCode',f.taxCode||state.profile.taxCode);ui.setValue('actualNiCategory',f.niCategory||state.profile.niCategory);ui.setValue('actualNet',f.netPay);ui.setValue('actualTax',f.payeTax);ui.setValue('actualNi',f.employeeNi);ui.setValue('actualPension',f.pension);ui.setValue('actualYtdTaxable',f.ytdTaxable);ui.setValue('actualYtdTax',f.ytdTax);ui.setValue('actualYtdNi',f.ytdNi);ui.setValue('actualYtdPension',f.ytdPension);ui.setValue('actualBasic',f.basicPay);ui.setValue('actualEmergency',f.emergencyPay);ui.setValue('actualStandbyDays',f.standbyDays);ui.setValue('actualStandbyPay',f.standbyPay);ui.setValue('actualOt15Hours',f.ot15Hours);ui.setValue('actualOt15Pay',f.ot15Pay);ui.setValue('actualOt2Hours',f.ot2Hours);ui.setValue('actualOt2Pay',f.ot2Pay);ui.setValue('actualHoliday',f.holidayBonus);ui.setValue('actualGrossTaxable',f.grossTaxable);ui.setValue('actualBenefits',f.taxableBenefits);ui.inlineError('actualError','');ui.openDialog('actualDialog')}
