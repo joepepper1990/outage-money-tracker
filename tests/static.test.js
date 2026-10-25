@@ -101,9 +101,9 @@ test('unconnected home-screen install exposes one-time shared tracker connection
   assert.match(ui,/showConnectPanel/);
 });
 
-test('service worker cache version is bumped for migration hotfix',async()=>{
+test('service worker cache version is bumped for payroll calibration',async()=>{
   const sw=await read('sw.js');
-  assert.match(sw,/outage-money-v2-20260926-3/);
+  assert.match(sw,/outage-money-v2-20261025-4/);
 });
 
 test('Fun tab and its panel are removed',async()=>{
