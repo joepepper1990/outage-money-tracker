@@ -38,7 +38,7 @@
         </article>
 
         <div class="quick-actions">
-          <button type="button" data-open="overtimeDialog"><span>＋</span> Overtime</button>
+          <button type="button" data-overtime-jump><span>＋</span> Overtime</button>
           <button type="button" data-open="standbyDialog"><span>＋</span> Pager</button>
           <button type="button" data-open="actualDialog"><span>✓</span> Payslip</button>
         </div>
@@ -57,9 +57,21 @@
       <section class="page" data-page="work">
         <article class="card">
           <div class="section-head"><h2>Work month</h2><input id="workMonth" class="month-input" type="month"></div>
-          <div class="two-buttons"><button class="secondary" type="button" data-open="overtimeDialog">Add overtime</button><button class="secondary" type="button" data-open="standbyDialog">Add pager</button></div>
+          <div class="two-buttons"><button class="secondary" type="button" data-overtime-jump>Add overtime</button><button class="secondary" type="button" data-open="standbyDialog">Add pager</button></div>
         </article>
-        <article class="card"><div class="section-head"><h2>Overtime</h2><span id="workOtTotal"></span></div><div id="overtimeList" class="simple-list"></div></article>
+        <article class="card" id="overtimeCard">
+          <div class="section-head"><h2>Overtime</h2><span id="workOtTotal"></span></div>
+          <form id="overtimeAddForm" class="inline-ot-form">
+            <div class="inline-ot-fields">
+              <label class="field"><span>Date</span><input id="addOtDate" type="date" required></label>
+              <label class="field"><span>Hours</span><input id="addOtHours" type="number" min="0.25" max="24" step="0.25" inputmode="decimal" value="1" required></label>
+              <label class="field"><span>Rate</span><select id="addOtRate"><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+            </div>
+            <button class="primary inline-ot-add" type="submit">Add overtime</button>
+            <p id="addOtError" class="inline-error" hidden></p>
+          </form>
+          <div id="overtimeList" class="inline-overtime-list"></div>
+        </article>
         <article class="card"><div class="section-head"><h2>Pager</h2><span id="workPagerTotal"></span></div><div id="standbyList" class="simple-list"></div></article>
       </section>
 
@@ -96,19 +108,6 @@
       <button data-nav="settings" type="button"><span>⚙</span>Settings</button>
     </nav>
   </div>
-
-  <dialog id="overtimeDialog" class="sheet">
-    <div class="sheet-head"><h2>Overtime</h2><button type="button" data-close="overtimeDialog">×</button></div>
-    <form id="overtimeForm" class="sheet-body stack">
-      <input id="otId" type="hidden">
-      <label class="field"><span>Date</span><input id="otDate" type="date" required></label>
-      <label class="field"><span>Hours</span><input id="otHours" type="number" min="0.25" max="24" step="0.25" inputmode="decimal" required></label>
-      <label class="field"><span>Rate</span><select id="otRate"><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
-      <p id="otError" class="inline-error" hidden></p>
-      <button class="primary" type="submit">Save overtime</button>
-      <button id="deleteOtBtn" class="danger-button" type="button" hidden>Delete</button>
-    </form>
-  </dialog>
 
   <dialog id="standbyDialog" class="sheet">
     <div class="sheet-head"><h2>Pager</h2><button type="button" data-close="standbyDialog">×</button></div>
