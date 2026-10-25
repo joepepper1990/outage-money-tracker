@@ -90,10 +90,28 @@ export function salaryScaleAt(date,state,excludeDealId=null){const p={...BASE_PR
 function monthLastDate(month){const [y,m]=monthKey(month).split('-').map(Number);return new Date(Date.UTC(y,m,0,12)).toISOString().slice(0,10)}
 export function monthlyBasicForMonth(month,state,excludeDealId=null){return roundMoney(salaryAt(monthLastDate(month),state,excludeDealId)/12)}
 function balancedMonthly(annual,index){const n=((index%12)+12)%12;return roundMoney(roundMoney(Number(annual)*(n+1)/12)-roundMoney(Number(annual)*n/12))}
-export function emergencyForMonth(month,state,excludeDealId=null){const p={...BASE_PROFILE,...(state?.profile||{})};const date=monthLastDate(month),regime=salaryRegimeAt(date,state,excludeDealId);const annual=Number(p.emergencyAnnualAmount)*regime.salary/(Number(p.annualSalary)||BASE_PROFILE.annualSalary);const startMonth=monthKey(regime.startDate),index=Math.max(0,monthIndexBetween(startMonth,month));return balancedMonthly(annual,index)}
+export function emergencyForMonth(month,state,excludeDealId=null){
+  const p={...BASE_PROFILE,...(state?.profile||{})},date=monthLastDate(month);
+  const changes=events(state,'emergency_annual').filter(e=>String(e.effectiveDate)<=date&&e.valueNumeric!=null);
+  const change=changes.at(-1);
+  const baseAnnual=change?Number(change.valueNumeric):Number(p.emergencyAnnualAmount);
+  const baseDate=change?.effectiveDate||p.emergencyEffectiveDate||p.salaryEffectiveDate;
+  const baseSalary=salaryAt(baseDate,state,excludeDealId),currentSalary=salaryAt(date,state,excludeDealId);
+  const annual=baseAnnual*(baseSalary?currentSalary/baseSalary:1);
+  const startMonth=monthKey(baseDate),index=Math.max(0,monthIndexBetween(startMonth,month));
+  return balancedMonthly(annual,index);
+}
 export function overtimeRateAt(date,multiplier,state,excludeDealId=null){const p={...BASE_PROFILE,...(state?.profile||{})};const base=Number(multiplier)===2?Number(p.overtimeRate2):Number(p.overtimeRate15);return base*salaryScaleAt(date,state,excludeDealId)}
 export function overtimePeriodGross(period,state,excludeDealId=null){return roundMoney(periodDurationHours(period)*overtimeRateAt(period.date,period.multiplier,state,excludeDealId))}
-export function standbyRateAt(date,state,excludeDealId=null){const p={...BASE_PROFILE,...(state?.profile||{})};return Number(p.standbyDailyRate)*salaryScaleAt(date,state,excludeDealId)}
+export function standbyRateAt(date,state,excludeDealId=null){
+  const p={...BASE_PROFILE,...(state?.profile||{})};
+  const changes=events(state,'standby_daily').filter(e=>String(e.effectiveDate)<=date&&e.valueNumeric!=null);
+  const change=changes.at(-1);
+  const baseRate=change?Number(change.valueNumeric):Number(p.standbyDailyRate);
+  const baseDate=change?.effectiveDate||p.standbyEffectiveDate||p.salaryEffectiveDate;
+  const baseSalary=salaryAt(baseDate,state,excludeDealId),currentSalary=salaryAt(date,state,excludeDealId);
+  return baseRate*(baseSalary?currentSalary/baseSalary:1);
+}
 export function standbyClaimGross(claim,state,excludeDealId=null){const rate=claim.rateOverride!=null?Number(claim.rateOverride):standbyRateAt(claim.date,state,excludeDealId);return roundMoney(roundMoney(rate)*Number(claim.units||0))}
 export function paymentMonthForWorkDate(date){return addMonths(monthKey(date),1)}
 
