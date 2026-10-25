@@ -6,103 +6,201 @@
   <meta name="theme-color" content="#07120d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Outage Money">
+  <meta name="apple-mobile-web-app-title" content="Pay Tracker">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <title>Outage Money</title>
+  <title>Pay Tracker</title>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="topbar">
-      <button class="nav-button" data-open="hoursDialog">Hours</button>
-      <button class="nav-button" data-open="planDialog">Plan</button>
-      <button class="nav-button" data-open="spendDialog">Spend</button>
+  <div class="app-shell">
+    <header class="app-head">
+      <div><div class="eyebrow">PAY TRACKER</div><h1 id="pageTitle">Pay</h1></div>
+      <div id="syncStatus" class="sync-status" data-state="loading">Connecting…</div>
     </header>
-
-    <section class="home-card" aria-live="polite">
-      <div class="eyebrow">Outage Money</div>
-      <div id="completionRing" class="completion-ring" style="--progress:0deg">
-        <div class="ring-inner">
-          <div id="total" class="total">£0.00</div>
-          <div id="progressText" class="progress-text">0% complete</div>
-        </div>
-      </div>
-      <div id="earningStatus" class="earning-status">NOT EARNING</div>
-      <div id="countdown" class="countdown">Loading schedule…</div>
-      <div id="syncStatus" class="sync-status" data-state="loading">● Connecting…</div>
-    </section>
     <p id="globalError" class="global-error" hidden></p>
-    <section id="connectPanel" class="connect-card" hidden>
-      <div class="connect-title">Connect shared tracker</div>
-      <p>Paste the private sharing link here once to connect this exact app installation and migrate the data already stored on this phone.</p>
-      <form id="connectForm">
-        <input id="connectLink" type="url" inputmode="url" autocomplete="off" placeholder="Paste private sharing link" required>
-        <button class="primary" type="submit">Connect &amp; migrate</button>
+    <section id="connectPanel" class="card connect-card" hidden>
+      <strong>Connect tracker</strong>
+      <form id="connectForm" class="stack compact-stack">
+        <input id="connectLink" type="url" inputmode="url" autocomplete="off" placeholder="Paste private link" required>
+        <button class="primary" type="submit">Connect</button>
         <p id="connectError" class="inline-error" hidden></p>
       </form>
     </section>
-  </main>
 
-  <dialog id="hoursDialog" class="sheet">
-    <div class="sheet-head"><h2>Hours</h2><button class="icon-close" data-close="hoursDialog" aria-label="Close">×</button></div>
-    <label class="field"><span>Date</span><input id="hoursDate" type="date"></label>
-    <div id="hoursList" class="stack"></div>
-    <form id="hoursForm" class="form-card">
-      <input id="periodId" type="hidden">
-      <div class="form-grid">
-        <label class="field"><span>Start</span><input id="periodStart" type="time" required></label>
-        <label class="field"><span>Finish</span><input id="periodEnd" type="time" required></label>
-      </div>
-      <label class="field"><span>Rate</span><select id="periodMultiplier"><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
-      <p id="hoursError" class="inline-error" hidden></p>
-      <button class="primary" type="submit">Save overtime</button>
-      <button id="cancelHoursEdit" class="secondary" type="button" hidden>Cancel edit</button>
-    </form>
-  </dialog>
+    <main class="pages">
+      <section class="page active" data-page="pay">
+        <article class="hero-card">
+          <div class="hero-top"><span>Next pay</span><span id="nextPayStatus" class="status-pill">Forecast</span></div>
+          <div id="nextPayDate" class="hero-date">—</div>
+          <div id="nextPayNet" class="hero-value">£0.00</div>
+          <div id="nextPayMonth" class="hero-sub">—</div>
+        </article>
 
-  <dialog id="planDialog" class="sheet large-sheet">
-    <div class="sheet-head"><h2>Plan</h2><button class="icon-close" data-close="planDialog" aria-label="Close">×</button></div>
-    <nav class="tabs" aria-label="Plan sections">
-      <button class="tab active" data-tab="forecastPanel">Forecast</button>
-      <button class="tab" data-tab="calendarPanel">Calendar</button>
+        <div class="quick-actions">
+          <button type="button" data-open="overtimeDialog"><span>＋</span> Overtime</button>
+          <button type="button" data-open="standbyDialog"><span>＋</span> Pager</button>
+          <button type="button" data-open="actualDialog"><span>✓</span> Payslip</button>
+        </div>
+
+        <article class="card">
+          <div class="section-head"><h2>Breakdown</h2><span id="breakdownMonthLabel"></span></div>
+          <div id="payBreakdown" class="money-list"></div>
+        </article>
+
+        <article class="card">
+          <div class="section-head"><h2>Actual payslips</h2><button id="addActualBtn" class="text-button" type="button">Add</button></div>
+          <div id="actualList" class="simple-list"></div>
+        </article>
+      </section>
+
+      <section class="page" data-page="work">
+        <article class="card">
+          <div class="section-head"><h2>Work month</h2><input id="workMonth" class="month-input" type="month"></div>
+          <div class="two-buttons"><button class="secondary" type="button" data-open="overtimeDialog">Add overtime</button><button class="secondary" type="button" data-open="standbyDialog">Add pager</button></div>
+        </article>
+        <article class="card"><div class="section-head"><h2>Overtime</h2><span id="workOtTotal"></span></div><div id="overtimeList" class="simple-list"></div></article>
+        <article class="card"><div class="section-head"><h2>Pager</h2><span id="workPagerTotal"></span></div><div id="standbyList" class="simple-list"></div></article>
+      </section>
+
+      <section class="page" data-page="forecast">
+        <article class="card summary-card">
+          <div><span class="label">Tax year</span><strong id="taxYearLabel">—</strong></div>
+          <div><span class="label">Projected taxable</span><strong id="taxYearTaxable">£0.00</strong></div>
+          <div><span class="label">Projected tax</span><strong id="taxYearTax">£0.00</strong></div>
+        </article>
+        <article class="card">
+          <div class="section-head"><h2>Holiday payment</h2><span id="holidayBonusYear"></span></div>
+          <div id="holidayBonusValue" class="large-metric">£0.00</div>
+          <div id="holidayBonusQualifying" class="muted"></div>
+        </article>
+        <article class="card"><div class="section-head"><h2>Monthly take-home</h2><select id="forecastLength"><option value="12">12 months</option><option value="24">24 months</option></select></div><div id="forecastList" class="forecast-list"></div></article>
+      </section>
+
+      <section class="page" data-page="settings">
+        <article class="card">
+          <div class="section-head"><h2>Current settings</h2></div>
+          <div id="settingsSummary" class="settings-grid"></div>
+          <div class="two-buttons"><button id="addChangeBtn" class="secondary" type="button">Add change</button><button id="editProfileBtn" class="secondary" type="button">Edit base</button></div>
+        </article>
+        <article class="card"><div class="section-head"><h2>Pay deals</h2><button id="addPayDealBtn" class="text-button" type="button">Add</button></div><div id="payDealList" class="simple-list"></div></article>
+        <article class="card"><div class="section-head"><h2>Schemes</h2><button id="addSchemeBtn" class="text-button" type="button">Add</button></div><div id="schemeList" class="simple-list"></div></article>
+        <article class="card"><div class="section-head"><h2>Changes</h2></div><div id="eventList" class="simple-list"></div></article>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="active" data-nav="pay" type="button"><span>£</span>Pay</button>
+      <button data-nav="work" type="button"><span>◷</span>Work</button>
+      <button data-nav="forecast" type="button"><span>↗</span>Forecast</button>
+      <button data-nav="settings" type="button"><span>⚙</span>Settings</button>
     </nav>
+  </div>
 
-    <section id="forecastPanel" class="tab-panel active">
-      <label class="field"><span>Future date</span><input id="futureDate" type="date"></label>
-      <div id="forecastCards" class="metric-grid"></div>
-    </section>
-
-    <section id="calendarPanel" class="tab-panel">
-      <div class="calendar-head">
-        <button id="prevMonth" class="secondary compact" type="button">‹</button>
-        <strong id="calendarTitle"></strong>
-        <button id="nextMonth" class="secondary compact" type="button">›</button>
-      </div>
-      <div class="weekday-row"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-      <div id="calendarGrid" class="calendar-grid"></div>
-      <div id="calendarDayDetail" class="calendar-detail"></div>
-    </section>
-
-  </dialog>
-
-  <dialog id="spendDialog" class="sheet">
-    <div class="sheet-head"><h2>Spend</h2><button class="icon-close" data-close="spendDialog" aria-label="Close">×</button></div>
-    <form id="spendForm" class="form-card">
-      <input id="expenseId" type="hidden">
-      <label class="field"><span>Description</span><input id="expenseDescription" maxlength="160" required placeholder="Holiday"></label>
-      <div class="form-grid">
-        <label class="field"><span>Amount</span><input id="expenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
-        <label class="field"><span>Date</span><input id="expenseDate" type="date" required></label>
-      </div>
-      <p id="spendError" class="inline-error" hidden></p>
-      <button class="primary" type="submit">Save expenditure</button>
-      <button id="cancelSpendEdit" class="secondary" type="button" hidden>Cancel edit</button>
+  <dialog id="overtimeDialog" class="sheet">
+    <div class="sheet-head"><h2>Overtime</h2><button type="button" data-close="overtimeDialog">×</button></div>
+    <form id="overtimeForm" class="sheet-body stack">
+      <input id="otId" type="hidden">
+      <label class="field"><span>Date</span><input id="otDate" type="date" required></label>
+      <div class="form-grid"><label class="field"><span>Start</span><input id="otStart" type="time" required></label><label class="field"><span>Finish</span><input id="otEnd" type="time" required></label></div>
+      <label class="field"><span>Rate</span><select id="otRate"><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+      <p id="otError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save overtime</button>
+      <button id="deleteOtBtn" class="danger-button" type="button" hidden>Delete</button>
     </form>
-    <div id="spendList" class="stack"></div>
   </dialog>
 
-  <div id="effectRoot" class="effect-root" aria-live="assertive"></div>
+  <dialog id="standbyDialog" class="sheet">
+    <div class="sheet-head"><h2>Pager</h2><button type="button" data-close="standbyDialog">×</button></div>
+    <form id="standbyForm" class="sheet-body stack">
+      <input id="standbyId" type="hidden">
+      <label class="field"><span>Date</span><input id="standbyDate" type="date" required></label>
+      <label class="field"><span>Days</span><input id="standbyUnits" type="number" min="0.25" step="0.25" inputmode="decimal" required></label>
+      <label class="check-row"><input id="standbyPublic" type="checkbox"> Public holiday</label>
+      <p id="standbyError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save pager</button>
+      <button id="deleteStandbyBtn" class="danger-button" type="button" hidden>Delete</button>
+    </form>
+  </dialog>
+
+  <dialog id="actualDialog" class="sheet large-sheet">
+    <div class="sheet-head"><h2>Actual payslip</h2><button type="button" data-close="actualDialog">×</button></div>
+    <form id="actualForm" class="sheet-body stack">
+      <input id="actualId" type="hidden">
+      <div class="form-grid"><label class="field"><span>Pay month</span><input id="actualMonth" type="month" required></label><label class="field"><span>Pay date</span><input id="actualDate" type="date" required></label></div>
+      <div class="form-grid"><label class="field"><span>Tax code</span><input id="actualTaxCode" maxlength="12"></label><label class="field"><span>NI category</span><input id="actualNiCategory" maxlength="1"></label></div>
+      <h3>Actual figures</h3>
+      <div class="form-grid"><label class="field"><span>Net pay</span><input id="actualNet" type="number" step="0.01" inputmode="decimal"></label><label class="field"><span>PAYE tax</span><input id="actualTax" type="number" step="0.01" inputmode="decimal"></label></div>
+      <div class="form-grid"><label class="field"><span>NI</span><input id="actualNi" type="number" step="0.01" inputmode="decimal"></label><label class="field"><span>Pension</span><input id="actualPension" type="number" step="0.01" inputmode="decimal"></label></div>
+      <h3>Year to date</h3>
+      <div class="form-grid"><label class="field"><span>Taxable pay YTD</span><input id="actualYtdTaxable" type="number" step="0.01" inputmode="decimal" required></label><label class="field"><span>Tax YTD</span><input id="actualYtdTax" type="number" step="0.01" inputmode="decimal" required></label></div>
+      <div class="form-grid"><label class="field"><span>NI YTD</span><input id="actualYtdNi" type="number" step="0.01" inputmode="decimal" required></label><label class="field"><span>Pension YTD</span><input id="actualYtdPension" type="number" step="0.01" inputmode="decimal" required></label></div>
+      <details><summary>Pay lines (optional)</summary><div class="details-body">
+        <div class="form-grid"><label class="field"><span>Basic</span><input id="actualBasic" type="number" step="0.01"></label><label class="field"><span>Emergency</span><input id="actualEmergency" type="number" step="0.01"></label></div>
+        <div class="form-grid"><label class="field"><span>Pager days</span><input id="actualStandbyDays" type="number" step="0.25"></label><label class="field"><span>Pager pay</span><input id="actualStandbyPay" type="number" step="0.01"></label></div>
+        <div class="form-grid"><label class="field"><span>OT 1.5 hours</span><input id="actualOt15Hours" type="number" step="0.01"></label><label class="field"><span>OT 1.5 pay</span><input id="actualOt15Pay" type="number" step="0.01"></label></div>
+        <div class="form-grid"><label class="field"><span>OT 2× hours</span><input id="actualOt2Hours" type="number" step="0.01"></label><label class="field"><span>OT 2× pay</span><input id="actualOt2Pay" type="number" step="0.01"></label></div>
+        <div class="form-grid"><label class="field"><span>Holiday payment</span><input id="actualHoliday" type="number" step="0.01"></label><label class="field"><span>Gross taxable</span><input id="actualGrossTaxable" type="number" step="0.01"></label></div>
+        <label class="field"><span>Taxable benefits</span><input id="actualBenefits" type="number" step="0.01"></label>
+      </div></details>
+      <p id="actualError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save actual payslip</button>
+    </form>
+  </dialog>
+
+  <dialog id="payDealDialog" class="sheet large-sheet">
+    <div class="sheet-head"><h2>Pay deal</h2><button type="button" data-close="payDealDialog">×</button></div>
+    <form id="payDealForm" class="sheet-body stack">
+      <input id="payDealId" type="hidden">
+      <label class="field"><span>Name</span><input id="payDealName" placeholder="2027 pay deal" required></label>
+      <div class="form-grid"><label class="field"><span>Agreed date</span><input id="payDealAgreed" type="date" required></label><label class="field"><span>Arrears paid</span><input id="payDealArrears" type="month"></label></div>
+      <div class="section-head"><h3>Changes</h3><button id="addDealComponent" class="text-button" type="button">Add change</button></div>
+      <div id="dealComponents" class="stack compact-stack"></div>
+      <p id="dealError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save pay deal</button>
+      <button id="deletePayDealBtn" class="danger-button" type="button" hidden>Delete</button>
+    </form>
+  </dialog>
+
+  <dialog id="schemeDialog" class="sheet">
+    <div class="sheet-head"><h2>Scheme</h2><button type="button" data-close="schemeDialog">×</button></div>
+    <form id="schemeForm" class="sheet-body stack">
+      <input id="schemeId" type="hidden">
+      <label class="field"><span>Name</span><input id="schemeName" required></label>
+      <label class="field"><span>Monthly amount</span><input id="schemeAmount" type="number" min="0" step="0.01" required></label>
+      <div class="form-grid"><label class="field"><span>Start month</span><input id="schemeStart" type="month" required></label><label class="field"><span>End month</span><input id="schemeEnd" type="month"></label></div>
+      <label class="field"><span>Type</span><select id="schemeType"><option value="flex">Salary sacrifice + benefit</option><option value="pretax">Salary sacrifice</option><option value="posttax">Post-tax deduction</option></select></label>
+      <p id="schemeError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save scheme</button><button id="deleteSchemeBtn" class="danger-button" type="button" hidden>Delete</button>
+    </form>
+  </dialog>
+
+  <dialog id="changeDialog" class="sheet">
+    <div class="sheet-head"><h2>Change</h2><button type="button" data-close="changeDialog">×</button></div>
+    <form id="changeForm" class="sheet-body stack">
+      <input id="changeId" type="hidden">
+      <label class="field"><span>Type</span><select id="changeType"><option value="pension_rate">Pension %</option><option value="tax_code">Tax code</option><option value="ni_category">NI category</option><option value="salary_override">Annual salary</option><option value="emergency_annual">Emergency annual amount</option><option value="standby_daily">Pager daily rate</option></select></label>
+      <label class="field"><span>Effective date</span><input id="changeDate" type="date" required></label>
+      <label class="field"><span>Value</span><input id="changeValue" required></label>
+      <p id="changeError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save change</button><button id="deleteChangeBtn" class="danger-button" type="button" hidden>Delete</button>
+    </form>
+  </dialog>
+
+  <dialog id="profileDialog" class="sheet">
+    <div class="sheet-head"><h2>Base settings</h2><button type="button" data-close="profileDialog">×</button></div>
+    <form id="profileForm" class="sheet-body stack">
+      <label class="field"><span>Annual salary</span><input id="profileSalary" type="number" step="0.01" required></label>
+      <label class="field"><span>Salary effective</span><input id="profileSalaryDate" type="date" required></label>
+      <label class="field"><span>Pension %</span><input id="profilePension" type="number" step="0.01" required></label>
+      <label class="field"><span>Emergency annual amount</span><input id="profileEmergency" type="number" step="0.01" required></label>
+      <label class="field"><span>Pager daily rate</span><input id="profileStandby" type="number" step="0.00000001" required></label>
+      <div class="form-grid"><label class="field"><span>Tax code</span><input id="profileTaxCode" required></label><label class="field"><span>NI category</span><input id="profileNiCategory" maxlength="1" required></label></div>
+      <p id="profileError" class="inline-error" hidden></p>
+      <button class="primary" type="submit">Save settings</button>
+    </form>
+  </dialog>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
