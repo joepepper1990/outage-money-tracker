@@ -166,3 +166,12 @@ test('new overtime defaults to 2x on weekends and 1.5x on weekdays',async()=>{
   assert.equal(mod.defaultMultiplierForDate('2026-09-26'),2);
   assert.equal(mod.defaultMultiplierForDate('2026-09-25'),1.5);
 });
+
+
+test('hour-based overtime validates without start and finish times',()=>{
+  const p={id:'h',date:'2026-10-25',hours:10,multiplier:2};
+  assert.equal(validatePeriod(p,[]).ok,true);
+  assert.equal(periodDurationHours(p),10);
+  assert.equal(validatePeriod({...p,hours:0},[]).ok,false);
+  assert.equal(validatePeriod({...p,hours:25},[]).ok,false);
+});
