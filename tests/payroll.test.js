@@ -92,3 +92,18 @@ test('breakdown ends after October and technology after November',()=>{
   assert.equal(nov.recurringDeductions,67.92);
   assert.equal(dec.recurringDeductions,0);
 });
+
+
+test('effective emergency and pager overrides are used and continue scaling with later pay deals',()=>{
+  const s={...baseState,
+    payrollEvents:[
+      {id:'e',eventType:'emergency_annual',effectiveDate:'2027-05-01',valueNumeric:660},
+      {id:'p',eventType:'standby_daily',effectiveDate:'2027-05-01',valueNumeric:42}
+    ],
+    payDeals:[{id:'d',name:'later rise',agreedDate:'2027-08-01',components:[{type:'percent',effectiveDate:'2027-09-01',value:2,basis:'current'}]}]
+  };
+  close(emergencyForMonth('2027-05',s),55,.02);
+  close(emergencyForMonth('2027-09',s),56.10,.02);
+  close((await import('../js/payroll.js')).standbyRateAt('2027-05-15',s),42,.001);
+  close((await import('../js/payroll.js')).standbyRateAt('2027-09-15',s),42.84,.01);
+});
