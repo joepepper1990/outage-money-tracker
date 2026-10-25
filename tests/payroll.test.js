@@ -58,7 +58,7 @@ test('October 2026 forecast reproduces EDF high-OT payslip from September anchor
   periods.push({id:'b',date:'2026-09-11',start:'00:00',end:'18:30',multiplier:1.5});
   periods.push({id:'c',date:'2026-09-12',start:'00:00',end:'23:00',multiplier:2});
   periods.push({id:'d',date:'2026-09-13',start:'00:00',end:'22:00',multiplier:2});
-  const state={...baseState,periods,standbyClaims:[{id:'s',date:'2026-09-25',units:13}],actuals:[{payMonth:'2026-09',ytdTaxable:36207,ytdTax:8196.80,ytdNi:1720,ytdPension:2691.96}]};
+  const state={...baseState,periods,standbyClaims:[{id:'s',date:'2026-09-18',units:13}],actuals:[{payMonth:'2026-09',ytdTaxable:36207,ytdTax:8196.80,ytdNi:1720,ytdPension:2691.96}]};
   const ot=overtimeForPayMonth('2026-10',state);close(ot.h15,41.5);close(ot.h2,45);close(ot.pay15,2316.26);close(ot.pay2,3348.78);
   const x=payrollForMonth('2026-10',state);
   assert.equal(x.standbyPay,523.77);assert.equal(x.grossTaxable,11697.33);assert.equal(x.taxableBenefits,76.16);assert.equal(x.ytdTaxable,47980.49);
