@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   BASE_PROFILE, roundMoney, payDateForMonth, taxPeriodForDate, codeFreePayAnnual,
   cumulativePayeDue, employeeNI, holidayBonusFromQualifyingOt, emergencyForMonth,
-  payrollForMonth, qualifyingOtPaidInYear, overtimeForPayMonth, salaryAt, dealArrearsForPayMonth
+  payrollForMonth, qualifyingOtPaidInYear, overtimeForPayMonth, salaryAt, dealArrearsForPayMonth, standbyRateAt
 } from '../js/payroll.js';
 
 const close=(a,b,eps=.011)=>assert.ok(Math.abs(a-b)<=eps,`${a} != ${b}`);
@@ -104,6 +104,6 @@ test('effective emergency and pager overrides are used and continue scaling with
   };
   close(emergencyForMonth('2027-05',s),55,.02);
   close(emergencyForMonth('2027-09',s),56.10,.02);
-  close((await import('../js/payroll.js')).standbyRateAt('2027-05-15',s),42,.001);
-  close((await import('../js/payroll.js')).standbyRateAt('2027-09-15',s),42.84,.01);
+  close(standbyRateAt('2027-05-15',s),42,.001);
+  close(standbyRateAt('2027-09-15',s),42.84,.01);
 });
