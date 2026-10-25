@@ -38,7 +38,7 @@
         </article>
 
         <div class="quick-actions">
-          <button type="button" data-overtime-jump><span>＋</span> Overtime</button>
+          <button type="button" data-overtime-jump="current"><span>＋</span> Overtime</button>
           <button type="button" data-open="standbyDialog"><span>＋</span> Pager</button>
           <button type="button" data-open="actualDialog"><span>✓</span> Payslip</button>
         </div>
@@ -57,7 +57,7 @@
       <section class="page" data-page="work">
         <article class="card">
           <div class="section-head"><h2>Work month</h2><input id="workMonth" class="month-input" type="month"></div>
-          <div class="two-buttons"><button class="secondary" type="button" data-overtime-jump>Add overtime</button><button class="secondary" type="button" data-open="standbyDialog">Add pager</button></div>
+          <div class="two-buttons"><button class="secondary" type="button" data-overtime-jump="selected">Add overtime</button><button class="secondary" type="button" data-open="standbyDialog">Add pager</button></div>
         </article>
         <article class="card" id="overtimeCard">
           <div class="section-head"><h2>Overtime</h2><span id="workOtTotal"></span></div>
