@@ -1,5 +1,18 @@
 export const BASIC_HOURLY_RATE = 37.21;
-export const NET_FACTOR = 0.58;
+
+// 2026/27 marginal deductions for the current overtime pattern:
+// higher-rate Income Tax (40%) plus employee NI above the UEL (2%).
+export const MARGINAL_INCOME_TAX_RATE = 0.40;
+export const MARGINAL_NI_RATE = 0.02;
+export const NET_FACTOR = 1 - MARGINAL_INCOME_TAX_RATE - MARGINAL_NI_RATE;
+
+// Payroll-calibrated gross overtime rates. The payslip's displayed base rate is
+// rounded to £37.21, while the overtime line totals reveal the slightly more
+// precise rates actually used by payroll.
+export const PAYROLL_GROSS_OT_RATES = Object.freeze({
+  1.5: 55.81349397590362,
+  2: 74.41733333333333
+});
 
 const RAW_DEFAULT_PERIODS = [
   ['2026-09-07','15:30','19:00',1.5],['2026-09-08','15:30','16:30',1.5],
@@ -9,7 +22,7 @@ const RAW_DEFAULT_PERIODS = [
   ['2026-09-15','15:30','16:30',1.5],['2026-09-16','15:30','19:00',1.5],
   ['2026-09-17','15:30','16:30',1.5],['2026-09-18','15:30','16:30',1.5],
   ['2026-09-21','15:30','19:00',1.5],['2026-09-22','15:30','16:30',1.5],
-  ['2026-09-23','15:30','16:30',1.5],['2026-09-24','15:30','16:30',1.5],
+  ['2026-09-23','15:30','19:00',1.5],['2026-09-24','15:30','16:30',1.5],
   ['2026-09-25','15:30','19:00',1.5],['2026-09-26','07:00','19:00',2],
   ['2026-09-27','07:00','19:00',2],['2026-09-28','15:30','19:00',1.5],
   ['2026-09-29','15:30','16:30',1.5],['2026-09-30','15:30','17:30',1.5],
@@ -19,7 +32,7 @@ const RAW_DEFAULT_PERIODS = [
   ['2026-10-09','15:30','19:00',1.5],['2026-10-10','07:00','19:00',2],
   ['2026-10-11','07:00','19:00',2],['2026-10-12','15:30','19:00',1.5],
   ['2026-10-13','15:30','16:30',1.5],['2026-10-14','15:30','19:00',1.5],
-  ['2026-10-15','15:30','16:30',1.5],['2026-10-16','15:30','16:30',1.5],
+  ['2026-10-15','15:30','16:00',1.5],['2026-10-16','15:30','16:30',1.5],
   ['2026-10-19','15:30','19:00',1.5],['2026-10-20','15:30','16:30',1.5],
   ['2026-10-21','15:30','19:00',1.5],['2026-10-22','15:30','16:30',1.5],
   ['2026-10-23','15:30','19:00',1.5],['2026-10-24','07:00','19:00',2],
@@ -36,7 +49,12 @@ export const DEFAULT_PERIODS = RAW_DEFAULT_PERIODS.map((p,i)=>({
   id:`default-${i+1}`, date:p[0], start:p[1], end:p[2], multiplier:p[3]
 }));
 
-export const hourlyNetRate = multiplier => Number((BASIC_HOURLY_RATE * Number(multiplier) * NET_FACTOR).toFixed(10));
+export function grossHourlyRate(multiplier){
+  const key=Number(multiplier);
+  return PAYROLL_GROSS_OT_RATES[key] ?? BASIC_HOURLY_RATE * key;
+}
+
+export const hourlyNetRate = multiplier => Number((grossHourlyRate(multiplier) * NET_FACTOR).toFixed(10));
 
 export function defaultMultiplierForDate(dateStr){
   const day=new Date(`${dateStr}T12:00:00Z`).getUTCDay();
