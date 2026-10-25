@@ -12,3 +12,21 @@ input[type="date"],input[type="time"],input[type="month"],input[type="number"]{-
   dialog.sheet,dialog.large-sheet{inline-size:calc(100dvw - 16px)!important;width:calc(100dvw - 16px)!important;max-inline-size:calc(100dvw - 16px)!important;max-width:calc(100dvw - 16px)!important}
   .sheet-body{padding-left:14px;padding-right:14px;overflow-x:hidden}
 }
+
+
+/* Inline overtime editor */
+.inline-ot-form{margin-top:12px;padding:12px;border:1px solid rgba(66,223,137,.22);border-radius:15px;background:rgba(66,223,137,.045)}
+.inline-overtime-list{display:grid;gap:10px;margin-top:12px}
+.inline-ot-row{display:grid;gap:8px;padding:12px;border:1px solid var(--line);border-radius:15px;background:#0a1610;min-width:0}
+.inline-ot-fields{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(76px,.65fr) minmax(82px,.65fr);gap:8px;min-width:0}
+.inline-ot-fields>*{min-width:0}
+.inline-ot-actions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.inline-save,.inline-delete{border-radius:11px;padding:10px 12px;font-weight:850}
+.inline-save{border:0;background:var(--green);color:#03200f}
+.inline-delete{border:1px solid rgba(255,124,116,.26);background:transparent;color:#ffaaa4}
+.inline-ot-add{margin-top:10px}
+@media(max-width:520px){
+  .inline-ot-fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .inline-ot-fields .field:first-child{grid-column:1/-1}
+  .inline-ot-actions{grid-template-columns:1fr auto}
+}
