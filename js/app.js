@@ -112,9 +112,14 @@ function openProfile(){const p=state.profile;ui.setValue('profileSalary',p.annua
 
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-nav]');if(nav){ui.showPage(nav.dataset.nav);return}
+  const otJump=e.target.closest('[data-overtime-jump]');if(otJump){jumpToOvertime(otJump.dataset.overtimeJump==='current');return}
   const close=e.target.closest('[data-close]');if(close){ui.closeDialog(close.dataset.close);return}
-  const open=e.target.closest('[data-open]');if(open){if(open.dataset.open==='overtimeDialog')openOvertime();else if(open.dataset.open==='standbyDialog')openStandby();else if(open.dataset.open==='actualDialog')openActual(null,currentNextMonth());else ui.openDialog(open.dataset.open);return}
-  const ot=e.target.closest('[data-edit-ot]');if(ot){openOvertime(state.periods.find(x=>x.id===ot.dataset.editOt));return}
+  const open=e.target.closest('[data-open]');if(open){if(open.dataset.open==='standbyDialog')openStandby();else if(open.dataset.open==='actualDialog')openActual(null,currentNextMonth());else ui.openDialog(open.dataset.open);return}
+  const otDelete=e.target.closest('[data-delete-inline-ot]');if(otDelete){
+    const id=otDelete.dataset.deleteInlineOt;
+    if(id)mutate(()=>client.deletePeriod(id)).catch(err=>ui.showError(err.message));
+    return;
+  }
   const sb=e.target.closest('[data-edit-standby]');if(sb){openStandby(state.standbyClaims.find(x=>x.id===sb.dataset.editStandby));return}
   const ac=e.target.closest('[data-edit-actual]');if(ac){openActual(state.actuals.find(x=>x.id===ac.dataset.editActual));return}
   const dl=e.target.closest('[data-edit-deal]');if(dl){openDeal(state.payDeals.find(x=>x.id===dl.dataset.editDeal));return}
