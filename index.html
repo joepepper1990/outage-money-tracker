@@ -127,15 +127,16 @@
     <div class="sheet-head"><h2>Actual payslip</h2><button type="button" data-close="actualDialog">×</button></div>
     <form id="actualForm" class="sheet-body stack">
       <input id="actualId" type="hidden">
-      <div class="form-grid"><label class="field"><span>Pay month</span><input id="actualMonth" type="month" required></label><label class="field"><span>Pay date</span><input id="actualDate" type="date" required></label></div>
-      <div class="form-grid"><label class="field"><span>Tax code</span><input id="actualTaxCode" maxlength="12"></label><label class="field"><span>NI category</span><input id="actualNiCategory" maxlength="1"></label></div>
+      <label class="field"><span>Pay month</span><input id="actualMonth" type="month" required></label>
       <h3>Actual figures</h3>
       <div class="form-grid"><label class="field"><span>Net pay</span><input id="actualNet" type="number" step="0.01" inputmode="decimal"></label><label class="field"><span>PAYE tax</span><input id="actualTax" type="number" step="0.01" inputmode="decimal"></label></div>
       <div class="form-grid"><label class="field"><span>NI</span><input id="actualNi" type="number" step="0.01" inputmode="decimal"></label><label class="field"><span>Pension</span><input id="actualPension" type="number" step="0.01" inputmode="decimal"></label></div>
       <h3>Year to date</h3>
       <div class="form-grid"><label class="field"><span>Taxable pay YTD</span><input id="actualYtdTaxable" type="number" step="0.01" inputmode="decimal" required></label><label class="field"><span>Tax YTD</span><input id="actualYtdTax" type="number" step="0.01" inputmode="decimal" required></label></div>
       <div class="form-grid"><label class="field"><span>NI YTD</span><input id="actualYtdNi" type="number" step="0.01" inputmode="decimal" required></label><label class="field"><span>Pension YTD</span><input id="actualYtdPension" type="number" step="0.01" inputmode="decimal" required></label></div>
-      <details><summary>Pay lines (optional)</summary><div class="details-body">
+      <details><summary>More details</summary><div class="details-body">
+        <div class="form-grid"><label class="field"><span>Pay date</span><input id="actualDate" type="date" required></label><label class="field"><span>Tax code</span><input id="actualTaxCode" maxlength="12"></label></div>
+        <label class="field"><span>NI category</span><input id="actualNiCategory" maxlength="1"></label>
         <div class="form-grid"><label class="field"><span>Basic</span><input id="actualBasic" type="number" step="0.01"></label><label class="field"><span>Emergency</span><input id="actualEmergency" type="number" step="0.01"></label></div>
         <div class="form-grid"><label class="field"><span>Pager days</span><input id="actualStandbyDays" type="number" step="0.25"></label><label class="field"><span>Pager pay</span><input id="actualStandbyPay" type="number" step="0.01"></label></div>
         <div class="form-grid"><label class="field"><span>OT 1.5 hours</span><input id="actualOt15Hours" type="number" step="0.01"></label><label class="field"><span>OT 1.5 pay</span><input id="actualOt15Pay" type="number" step="0.01"></label></div>
