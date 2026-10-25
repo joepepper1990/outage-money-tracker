@@ -14,29 +14,7 @@ alter table public.overtime_periods add constraint overtime_hours_valid check (h
 
 update public.overtime_periods set start_time=null,end_time=null where hours is not null;
 
-create or replace function public.tracker_seed_internal(
-  p_tracker_id uuid,
-  p_periods jsonb,
-  p_expenses jsonb
-)
-returns boolean
-language plpgsql
-security invoker
-set search_path = public, pg_temp
-as $
-begin
-  update public.trackers
-     set initialized_at = now()
-   where id = p_tracker_id
-     and initialized_at is null
-     and not exists (select 1 from public.overtime_periods where tracker_id = p_tracker_id)
-     and not exists (select 1 from public.expenses where tracker_id = p_tracker_id);
-
-  if not found then return false; end if;
-
-  insert into public.overtime_periods (id, tracker_id, work_date, start_time, end_time, hours, multiplier)
-  select
-    case when (x.id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12} (
+insert into public.payslip_actuals (
   tracker_id,pay_month,pay_date,tax_period,tax_code,tax_basis,ni_category,basic_pay,emergency_pay,standby_days,standby_pay,ot15_hours,ot15_pay,ot2_hours,ot2_pay,holiday_bonus,arrears_pay,other_pay,pension,paye_tax,employee_ni,taxable_benefits,gross_taxable,net_pay,ytd_taxable,ytd_tax,ytd_ni,ytd_pension,ytd_taxable_benefits,ytd_superannuable
 )
 select t.id,v.*
